@@ -54,9 +54,58 @@
     .search-highlight { box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.3); }
     .timeline-item::before { content: ''; position: absolute; left: -1.5rem; top: 0.5rem; width: 0.75rem; height: 0.75rem; border-radius: 50%; background: #7c3aed; }
     .sticky-status { position: sticky; top: 0; z-index: 40; }
+    /* トースト通知 */
+    .toast-container {
+      position: fixed;
+      top: 1rem;
+      right: 1rem;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      pointer-events: none;
+    }
+    .toast {
+      pointer-events: auto;
+      padding: 1rem 1.5rem;
+      border-radius: 0.5rem;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      animation: toast-in 0.3s ease forwards;
+      max-width: 400px;
+    }
+    .toast-success { background: #059669; color: white; }
+    .toast-error { background: #dc2626; color: white; }
+    .toast-warning { background: #d97706; color: white; }
+    .toast-info { background: #7c3aed; color: white; }
+    .toast-icon { flex-shrink: 0; width: 1.25rem; height: 1.25rem; }
+    .toast-message { font-size: 0.875rem; line-height: 1.4; }
+    .toast-close {
+      margin-left: auto;
+      background: none;
+      border: none;
+      color: inherit;
+      opacity: 0.7;
+      cursor: pointer;
+      padding: 0.25rem;
+    }
+    .toast-close:hover { opacity: 1; }
+    @keyframes toast-in {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+    @keyframes toast-out {
+      from { transform: translateX(0); opacity: 1; }
+      to { transform: translateX(100%); opacity: 0; }
+    }
   </style>
 </head>
 <body class="bg-gray-100 min-h-screen">
+
+  <!-- トースト通知コンテナ -->
+  <div id="toast-container" class="toast-container"></div>
 
   <!-- ========================================== -->
   <!-- ロール選択画面（最初の画面） -->
@@ -1713,12 +1762,46 @@
     let currentSubRole = '';
     let loginUsername = '';
 
+    // トースト通知を表示する関数
+    function showToast(message, type = 'info', duration = 4000) {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      toast.className = `toast toast-${type}`;
+
+      // アイコンを設定
+      const icons = {
+        success: '<svg class="toast-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>',
+        error: '<svg class="toast-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>',
+        warning: '<svg class="toast-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>',
+        info: '<svg class="toast-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>'
+      };
+
+      // 改行を<br>に変換
+      const formattedMessage = message.replace(/\n/g, '<br>');
+
+      toast.innerHTML = `
+        ${icons[type] || icons.info}
+        <span class="toast-message">${formattedMessage}</span>
+        <button class="toast-close" onclick="this.parentElement.remove()">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+      `;
+
+      container.appendChild(toast);
+
+      // 自動で消える
+      setTimeout(() => {
+        toast.style.animation = 'toast-out 0.3s ease forwards';
+        setTimeout(() => toast.remove(), 300);
+      }, duration);
+    }
+
     // ロール選択
     function enterRole(role, subRole) {
       // ユーザー名チェック
       const usernameInput = document.getElementById('login-username');
       if (usernameInput && !usernameInput.value.trim()) {
-        alert('ユーザー名を入力してください');
+        showToast('ユーザー名を入力してください', 'warning');
         usernameInput.focus();
         return;
       }
@@ -1745,7 +1828,7 @@
 
     // 送付モーダルを開く
     function openSendModal(hnId, name) {
-      alert('送付登録：' + name + '（' + hnId + '）\n\n送付書類を選択して送付日を記録します（デモ）');
+      showToast('送付登録：' + name + '（' + hnId + '）\n\n送付書類を選択して送付日を記録します（デモ）', 'info');
     }
 
     // 書類タイプ別フィルター（回数ベース）
@@ -1887,7 +1970,7 @@
     function exportCSV() {
       const checkboxes = document.querySelectorAll('.row-checkbox:checked');
       if (checkboxes.length === 0) {
-        alert('CSVに出力する対象を選択してください');
+        showToast('CSVに出力する対象を選択してください', 'warning');
         return;
       }
 
@@ -1910,14 +1993,14 @@
       a.click();
       URL.revokeObjectURL(url);
 
-      alert(checkboxes.length + '件のCSVを出力しました。\nWebレターで送付してください。');
+      showToast(checkboxes.length + '件のCSVを出力しました。\nWebレターで送付してください。', 'success');
     }
 
     // 送付済みにする
     function markAsSent() {
       const checkboxes = document.querySelectorAll('.row-checkbox:checked');
       if (checkboxes.length === 0) {
-        alert('送付済みにする対象を選択してください');
+        showToast('送付済みにする対象を選択してください', 'warning');
         return;
       }
 
@@ -1931,7 +2014,7 @@
           row.classList.add('opacity-50', 'line-through');
           cb.disabled = true;
         });
-        alert(checkboxes.length + '件を送付済みにしました。\n（デモ：実際はDBに記録されます）');
+        showToast(checkboxes.length + '件を送付済みにしました。', 'success');
         updateSelectedCount();
       }
     }
@@ -2127,7 +2210,7 @@
     function searchForNegotiation() {
       const searchQuery = document.getElementById('search-name-nego').value.trim();
       if (!searchQuery) {
-        alert('検索キーワードを入力してください');
+        showToast('検索キーワードを入力してください', 'warning');
         return;
       }
 
@@ -2155,7 +2238,7 @@
       document.getElementById('nego-result').classList.add('hidden');
 
       if (results.length === 0) {
-        alert('該当する発信者が見つかりませんでした');
+        showToast('該当する発信者が見つかりませんでした', 'warning');
         return;
       } else if (results.length === 1) {
         // 1件のみ：直接表示
@@ -2312,7 +2395,7 @@
       const content = document.getElementById('nego-content').value.trim();
 
       if (!content) {
-        alert('内容を入力してください');
+        showToast('内容を入力してください', 'warning');
         return;
       }
 
@@ -2353,7 +2436,7 @@
       const now = new Date();
       document.getElementById('nego-datetime').value = now.toISOString().slice(0, 16);
 
-      alert('交渉記録を追加しました（デモ：実際はDBに保存されます）');
+      showToast('交渉記録を追加しました', 'success');
     }
 
     // 初期表示
@@ -2801,7 +2884,7 @@
       });
 
       const countMsg = idsToLink.length > 1 ? `${idsToLink.length}件の` : '';
-      alert(`${countMsg}IPNを紐付けました\n\n発信者: ${selectedLinkPerson.name} (${selectedLinkPerson.hn})\n\n（デモ：実際はDBに保存されます）`);
+      showToast(`${countMsg}IPNを紐付けました\n\n発信者: ${selectedLinkPerson.name} (${selectedLinkPerson.hn})`, 'success');
 
       // リセット
       bulkIpnIds = [];
@@ -3006,18 +3089,18 @@
 
       // バリデーション：弁護士コード
       if (!lawyerCode || lawyerCode.length !== 2) {
-        alert('弁護士コード（2文字）を入力してください');
+        showToast('弁護士コード（2文字）を入力してください', 'warning');
         document.getElementById('junin-lawyer-code').focus();
         return;
       }
       const lawyer = getLawyerByCode(lawyerCode);
       if (!lawyer) {
-        alert(`弁護士コード「${lawyerCode}」は登録されていません。\n正しいコードを入力してください。`);
+        showToast(`弁護士コード「${lawyerCode}」は登録されていません。\n正しいコードを入力してください。`, 'error');
         document.getElementById('junin-lawyer-code').focus();
         return;
       }
       if (!juninDate) {
-        alert('受任通知日を入力してください');
+        showToast('受任通知日を入力してください', 'warning');
         document.getElementById('junin-date').focus();
         return;
       }
@@ -3026,7 +3109,7 @@
 
       if (isExisting) {
         if (!selectedJuninPerson) {
-          alert('発信者を検索して選択してください');
+          showToast('発信者を検索して選択してください', 'warning');
           return;
         }
         targetPerson = selectedJuninPerson;
@@ -3037,7 +3120,7 @@
         const newAddress = document.getElementById('junin-new-address').value.trim() || '-';
 
         if (!newName) {
-          alert('氏名を入力してください');
+          showToast('氏名を入力してください', 'warning');
           document.getElementById('junin-new-name').focus();
           return;
         }
@@ -3095,7 +3178,7 @@
       targetPerson.lastContact = juninDate;
 
       // 確認メッセージ
-      alert(`受任通知を登録しました\n\n発信者: ${targetPerson.name} (${targetPerson.hn})\n弁護士: ${fullLawyerName}\n弁護士コード: ${lawyerCode}\n受任日: ${juninDate}\n\n⚠ この発信者には直接連絡できません。\n書類は弁護士宛に送付してください。`);
+      showToast(`受任通知を登録しました\n\n発信者: ${targetPerson.name} (${targetPerson.hn})\n弁護士: ${fullLawyerName}\n受任日: ${juninDate}\n\n⚠ 書類は弁護士宛に送付してください`, 'success', 6000);
 
       closeJuninModal();
 
@@ -3109,7 +3192,7 @@
       if (name) {
         openPersonDetail('HN-000456', name);
       } else {
-        alert('名前を入力してください');
+        showToast('名前を入力してください', 'warning');
       }
     }
 
@@ -3183,7 +3266,7 @@
 
     // タスク一覧表示
     function showTaskList(type) {
-      alert(type + 'の一覧を表示（デモ）');
+      showToast(type + 'の一覧を表示（デモ）', 'info');
     }
 
     // 新規発信者登録
@@ -3256,7 +3339,7 @@
     function searchForLawyerNotice() {
       const query = document.getElementById('lawyer-notice-search').value.trim();
       if (!query) {
-        alert('検索キーワードを入力してください');
+        showToast('検索キーワードを入力してください', 'warning');
         return;
       }
 
@@ -3328,7 +3411,7 @@
 
     function saveLawyerNotice() {
       if (!selectedPersonForLawyer) {
-        alert('発信者を選択してください');
+        showToast('発信者を選択してください', 'warning');
         return;
       }
 
@@ -3338,7 +3421,7 @@
       const memo = document.getElementById('lawyer-notice-memo').value.trim();
 
       if (!code) {
-        alert('弁護士コードを入力してください');
+        showToast('弁護士コードを入力してください', 'warning');
         return;
       }
 
@@ -3349,7 +3432,7 @@
       selectedPersonForLawyer.lawyerDate = date;
       selectedPersonForLawyer.lawyerMemo = memo;
 
-      alert(`✅ 受任通知を登録しました\n\n発信者: ${selectedPersonForLawyer.name}\n弁護士: ${selectedPersonForLawyer.lawyerName}`);
+      showToast(`受任通知を登録しました\n\n発信者: ${selectedPersonForLawyer.name}\n弁護士: ${selectedPersonForLawyer.lawyerName}`, 'success');
       closeLawyerNoticeModal();
       updateRecentRegistrations();
     }
@@ -3405,15 +3488,15 @@
       const lawyerCode = document.getElementById('lawyer-manual-code').value.trim();
 
       if (!name) {
-        alert('契約者名を入力してください');
+        showToast('契約者名を入力してください', 'warning');
         return;
       }
       if (!address) {
-        alert('住所を入力してください');
+        showToast('住所を入力してください', 'warning');
         return;
       }
       if (!lawyerCode) {
-        alert('弁護士コードを入力してください');
+        showToast('弁護士コードを入力してください', 'warning');
         return;
       }
 
@@ -3441,7 +3524,7 @@
       };
 
       const lawyerName = personData[newHn].lawyerName;
-      alert(`✅ 登録しました\n\n発信者: ${name}\n弁護士: ${lawyerName}\nHN: ${newHn}`);
+      showToast(`登録しました\n\n発信者: ${name}\n弁護士: ${lawyerName}\nHN: ${newHn}`, 'success');
       closeLawyerNoticeManualModal();
       updateRecentRegistrations();
     }
@@ -3464,7 +3547,7 @@
     function parseCsvForHdb(csvText) {
       const lines = csvText.split(/\r?\n/).filter(line => line.trim());
       if (lines.length < 2) {
-        alert('CSVファイルにデータがありません');
+        showToast('CSVファイルにデータがありません', 'error');
         return;
       }
 
@@ -3492,7 +3575,7 @@
       const memoIdx = findCol(['メモ', '備考', 'memo', 'note']);
 
       if (nameIdx === -1 || addressIdx === -1) {
-        alert('必須カラム（契約者名、住所）が見つかりません');
+        showToast('必須カラム（契約者名、住所）が見つかりません', 'error');
         return;
       }
 
@@ -3569,7 +3652,7 @@
 
     function executeCsvImport() {
       if (csvParsedData.length === 0) {
-        alert('インポートするデータがありません');
+        showToast('インポートするデータがありません', 'warning');
         return;
       }
 
@@ -3602,7 +3685,7 @@
         successCount++;
       });
 
-      alert(`✅ ${successCount}件を登録しました`);
+      showToast(`${successCount}件を登録しました`, 'success');
       closeCsvUploadModal();
 
       // 最近の登録を更新（簡易版）
@@ -3639,7 +3722,7 @@
       const address = document.getElementById('new-person-address').value.trim();
 
       if (!name) {
-        alert('氏名を入力してから類似チェックしてください');
+        showToast('氏名を入力してから類似チェックしてください', 'warning');
         return;
       }
 
@@ -3649,7 +3732,7 @@
 
       if (similar.length === 0) {
         resultDiv.classList.add('hidden');
-        alert('✅ 類似する発信者は見つかりませんでした。\n新規登録を続けてください。');
+        showToast('類似する発信者は見つかりませんでした。\n新規登録を続けてください。', 'success');
         return;
       }
 
@@ -3683,7 +3766,7 @@
       if (confirm(`${person.name}（${person.hn}）を使用しますか？\n\n新規登録をキャンセルして、この発信者にIPNを紐付けます。`)) {
         closeNewPersonModal();
         // IPN紐付け画面を開く
-        alert(`${person.name}を選択しました。\nIPN紐付け画面から紐付けを行ってください。`);
+        showToast(`${person.name}を選択しました。\nIPN紐付け画面から紐付けを行ってください。`, 'info');
       }
     }
 
@@ -3760,12 +3843,12 @@
       const address = document.getElementById('new-person-address').value.trim();
 
       if (!name) {
-        alert('氏名を入力してください');
+        showToast('氏名を入力してください', 'warning');
         document.getElementById('new-person-name').focus();
         return;
       }
       if (!address) {
-        alert('住所を入力してください');
+        showToast('住所を入力してください', 'warning');
         document.getElementById('new-person-address').focus();
         return;
       }
@@ -3813,7 +3896,7 @@
         ? `\nIPN紐付け: ${selectedIpnsForNewPerson.length}件`
         : '';
 
-      alert(`発信者を登録しました\n\nID: ${newHn}\n氏名: ${name}\n住所: ${address}${ipnMsg}`);
+      showToast(`発信者を登録しました\n\nID: ${newHn}\n氏名: ${name}\n住所: ${address}${ipnMsg}`, 'success');
 
       closeNewPersonModal();
     }
@@ -3860,7 +3943,7 @@
       const file = event.target.files[0];
       if (file) {
         if (file.type !== 'application/pdf') {
-          alert('PDFファイルを選択してください');
+          showToast('PDFファイルを選択してください', 'warning');
           return;
         }
         settlementPdfFile = file;
@@ -3893,7 +3976,7 @@
     function saveSettlementDetails() {
       const status = document.querySelector('input[name="settlement"]:checked');
       if (!status) {
-        alert('和解ステータスを選択してください');
+        showToast('和解ステータスを選択してください', 'warning');
         return;
       }
 
@@ -3910,22 +3993,22 @@
         const warranty = document.querySelector('input[name="representation-warranty"]:checked');
 
         if (!settlementDate) {
-          alert('和解日を入力してください');
+          showToast('和解日を入力してください', 'warning');
           document.getElementById('settlement-date').focus();
           return;
         }
         if (!totalAmount) {
-          alert('和解金額総額を入力してください');
+          showToast('和解金額総額を入力してください', 'warning');
           document.getElementById('settlement-total-amount').focus();
           return;
         }
         if (!firstPaymentDate) {
-          alert('初回支払日を入力してください');
+          showToast('初回支払日を入力してください', 'warning');
           document.getElementById('settlement-first-payment-date').focus();
           return;
         }
         if (!settlementPdfFile) {
-          alert('和解書PDFを添付してください');
+          showToast('和解書PDFを添付してください', 'warning');
           return;
         }
 
@@ -3947,7 +4030,7 @@
 保存してWDBに連携しますか？`;
 
         if (confirm(confirmMsg)) {
-          alert('✅ 和解情報を保存しました\n\nWDBに連携されました。入金管理画面で確認できます。');
+          showToast('和解情報を保存しました\n\nWDBに連携されました。入金管理画面で確認できます。', 'success');
         }
       } else {
         // 交渉中または終了の場合
@@ -3958,7 +4041,7 @@
         const statusLabel = statusLabels[statusId] || 'ステータス更新';
 
         if (confirm(`和解ステータスを「${statusLabel}」に更新しますか？`)) {
-          alert(`✅ 和解ステータスを「${statusLabel}」に更新しました`);
+          showToast(`和解ステータスを「${statusLabel}」に更新しました`, 'success');
         }
       }
     }
@@ -3984,7 +4067,7 @@
           const file = e.dataTransfer.files[0];
           if (file) {
             if (file.type !== 'application/pdf') {
-              alert('PDFファイルを選択してください');
+              showToast('PDFファイルを選択してください', 'warning');
               dropzone.classList.remove('border-green-400', 'bg-green-50');
               return;
             }
