@@ -1,0 +1,3664 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HDB - 発信者情報データベース</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .form-input:focus { border-color: #7c3aed; box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.15); }
+    .tab-active { background-color: #7c3aed; color: white; }
+    .tab-inactive { background-color: #e5e7eb; color: #374151; }
+    .tab-inactive:hover { background-color: #d1d5db; }
+    .elegant-header { background: linear-gradient(135deg, #4c1d95 0%, #7c3aed 50%, #a78bfa 100%); }
+    .elegant-btn { background: linear-gradient(135deg, #5b21b6, #7c3aed); transition: all 0.3s ease; }
+    .elegant-btn:hover { background: linear-gradient(135deg, #4c1d95, #6d28d9); transform: translateY(-1px); }
+    .role-badge { display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.125rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
+    .role-a { background-color: #dbeafe; color: #1e40af; }
+    .role-b { background-color: #fef3c7; color: #92400e; }
+    .role-c { background-color: #d1fae5; color: #065f46; }
+    .status-badge { display: inline-flex; align-items: center; gap: 0.375rem; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; }
+    .status-red { background-color: #fee2e2; color: #991b1b; }
+    .status-yellow { background-color: #fef3c7; color: #92400e; }
+    .status-green { background-color: #d1fae5; color: #065f46; }
+    .status-gray { background-color: #f3f4f6; color: #4b5563; }
+    /* 弁護士依頼状況を最重要表示 */
+    /* 依頼済み = 弁護士名義でしか送れない = 赤（注意） */
+    .mandate-hero-yes {
+      background: linear-gradient(135deg, #dc2626 0%, #f87171 100%);
+      animation: pulse-red 1.5s ease-in-out infinite;
+    }
+    /* 未依頼 = 事務名義OK = 緑 */
+    .mandate-hero-no {
+      background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+      animation: pulse-green 2s ease-in-out infinite;
+    }
+    .mandate-hero-pending {
+      background: linear-gradient(135deg, #d97706 0%, #fbbf24 100%);
+      animation: pulse-yellow 1.8s ease-in-out infinite;
+    }
+    @keyframes pulse-red {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.5); }
+      50% { box-shadow: 0 0 25px 15px rgba(220, 38, 38, 0.3); }
+    }
+    @keyframes pulse-green {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+      50% { box-shadow: 0 0 20px 10px rgba(16, 185, 129, 0.2); }
+    }
+    @keyframes pulse-yellow {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(217, 119, 6, 0.4); }
+      50% { box-shadow: 0 0 20px 10px rgba(217, 119, 6, 0.2); }
+    }
+    .card-hover { transition: all 0.2s ease; }
+    .card-hover:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+    .search-highlight { box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.3); }
+    .timeline-item::before { content: ''; position: absolute; left: -1.5rem; top: 0.5rem; width: 0.75rem; height: 0.75rem; border-radius: 50%; background: #7c3aed; }
+    .sticky-status { position: sticky; top: 0; z-index: 40; }
+  </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+
+  <!-- ========================================== -->
+  <!-- ロール選択画面（最初の画面） -->
+  <!-- ========================================== -->
+  <div id="role-select-screen" class="min-h-screen flex items-center justify-center">
+    <div class="w-full max-w-2xl mx-4">
+      <div class="bg-white rounded-2xl shadow-xl overflow-hidden">
+        <div class="elegant-header text-white px-6 py-8 text-center relative">
+          <a href="portal.html" class="absolute top-4 left-4 flex items-center gap-2 text-white/80 hover:text-white transition text-sm">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+            </svg>
+            ポータルへ
+          </a>
+          <div class="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+            </svg>
+          </div>
+          <h1 class="text-2xl font-bold mb-2">HDB - 発信者情報データベース</h1>
+          <p class="text-purple-200">ログインしてください</p>
+        </div>
+
+        <div class="p-6 space-y-4">
+          <!-- ログインユーザー名入力 -->
+          <div class="bg-gray-50 border border-gray-200 rounded-xl p-4 mb-2">
+            <label class="block text-sm font-medium text-gray-700 mb-2">ユーザー名</label>
+            <input type="text" id="login-username" placeholder="例：田中"
+              class="w-full px-4 py-3 border-2 border-purple-300 rounded-lg text-lg font-bold focus:outline-none focus:border-purple-500">
+            <p class="text-xs text-gray-500 mt-2">※ 交渉記録などに記録者として保存されます</p>
+          </div>
+          <!-- ロールA: 事務担当（3つに分割） -->
+          <div class="bg-blue-50 border-2 border-blue-200 rounded-xl p-4">
+            <div class="flex items-center gap-2 mb-4">
+              <span class="role-badge role-a">ロールA</span>
+              <h3 class="font-bold text-gray-800">事務担当</h3>
+            </div>
+            <div class="grid grid-cols-3 gap-3">
+              <!-- 登録 -->
+              <button onclick="enterRole('A', 'register')" class="p-4 bg-white hover:bg-blue-100 border border-blue-300 rounded-lg text-center transition">
+                <div class="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center mx-auto mb-2">
+                  <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                  </svg>
+                </div>
+                <p class="font-bold text-gray-800 text-sm">登録</p>
+                <p class="text-xs text-gray-500 mt-1">開示結果登録</p>
+              </button>
+              <!-- 書類送付 -->
+              <button onclick="enterRole('A', 'document')" class="p-4 bg-white hover:bg-blue-100 border border-blue-300 rounded-lg text-center transition">
+                <div class="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center mx-auto mb-2">
+                  <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                  </svg>
+                </div>
+                <p class="font-bold text-gray-800 text-sm">書類送付</p>
+                <p class="text-xs text-gray-500 mt-1">通知書・催告書</p>
+              </button>
+              <!-- 交渉記録 -->
+              <button onclick="enterRole('A', 'negotiation')" class="p-4 bg-white hover:bg-blue-100 border border-blue-300 rounded-lg text-center transition">
+                <div class="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center mx-auto mb-2">
+                  <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                  </svg>
+                </div>
+                <p class="font-bold text-gray-800 text-sm">交渉記録</p>
+                <p class="text-xs text-gray-500 mt-1">電話・メモ</p>
+              </button>
+            </div>
+          </div>
+
+          <!-- ロールB: 管理者 -->
+          <button onclick="enterRole('B')" class="w-full p-6 bg-amber-50 hover:bg-amber-100 border-2 border-amber-200 rounded-xl text-left transition">
+            <div class="flex items-center gap-4">
+              <div class="w-12 h-12 bg-amber-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                </svg>
+              </div>
+              <div class="flex-1">
+                <div class="flex items-center gap-2 mb-1">
+                  <span class="role-badge role-b">ロールB</span>
+                  <h3 class="font-bold text-gray-800">管理者</h3>
+                </div>
+                <p class="text-sm text-gray-600">受任管理・HN紐付け・修正</p>
+                <p class="text-xs text-amber-600 mt-1">→ 名前・発信者ID・IPNで検索</p>
+              </div>
+            </div>
+          </button>
+
+          <!-- ロールC: 弁護士 -->
+          <button onclick="enterRole('C')" class="w-full p-6 bg-green-50 hover:bg-green-100 border-2 border-green-200 rounded-xl text-left transition">
+            <div class="flex items-center gap-4">
+              <div class="w-12 h-12 bg-green-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3"></path>
+                </svg>
+              </div>
+              <div class="flex-1">
+                <div class="flex items-center gap-2 mb-1">
+                  <span class="role-badge role-c">ロールC</span>
+                  <h3 class="font-bold text-gray-800">弁護士</h3>
+                </div>
+                <p class="text-sm text-gray-600">状況確認・判断・和解成立</p>
+                <p class="text-xs text-green-600 mt-1">→ 名前で検索 / 要対応一覧</p>
+              </div>
+            </div>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- ロールA: 事務担当UI -->
+  <!-- ========================================== -->
+  <div id="role-a-screen" class="hidden min-h-screen">
+    <header class="bg-blue-600 text-white shadow-lg">
+      <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <span class="role-badge bg-white/20 text-white">ロールA</span>
+          <h1 class="text-lg font-bold">事務担当</h1>
+        </div>
+        <button onclick="backToRoleSelect()" class="text-blue-100 hover:text-white text-sm flex items-center gap-1">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 17l-5-5m0 0l5-5m-5 5h12"></path>
+          </svg>
+          ロール選択に戻る
+        </button>
+      </div>
+    </header>
+
+    <main class="max-w-3xl mx-auto px-4 py-8">
+      <!-- 2つの登録カード -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+
+        <!-- プロバイダ開示登録 -->
+        <div class="bg-white rounded-2xl shadow-xl overflow-hidden border-2 border-blue-200 hover:border-blue-400 transition-colors">
+          <div class="bg-blue-600 text-white px-6 py-4">
+            <h3 class="text-lg font-bold">📄 プロバイダ開示登録</h3>
+            <p class="text-blue-100 text-sm">プロバイダから届いた開示結果を登録</p>
+          </div>
+          <div class="p-6 space-y-4">
+            <button onclick="openCsvUploadModal()" class="w-full py-4 bg-blue-50 hover:bg-blue-100 border-2 border-blue-200 rounded-xl text-blue-700 font-medium flex items-center justify-center gap-3 transition-colors">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+              </svg>
+              CSVからアップロード
+            </button>
+            <button onclick="openNewDisclosureModal()" class="w-full py-4 bg-gray-50 hover:bg-gray-100 border-2 border-gray-200 rounded-xl text-gray-700 font-medium flex items-center justify-center gap-3 transition-colors">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+              </svg>
+              手動で入力
+            </button>
+          </div>
+        </div>
+
+        <!-- 弁護士受任通知登録 -->
+        <div class="bg-white rounded-2xl shadow-xl overflow-hidden border-2 border-red-200 hover:border-red-400 transition-colors">
+          <div class="bg-red-600 text-white px-6 py-4">
+            <h3 class="text-lg font-bold">⚖️ 弁護士受任通知登録</h3>
+            <p class="text-red-100 text-sm">相手方弁護士からの受任通知を登録</p>
+          </div>
+          <div class="p-6 space-y-4">
+            <button onclick="openLawyerNoticeModal()" class="w-full py-4 bg-red-50 hover:bg-red-100 border-2 border-red-200 rounded-xl text-red-700 font-medium flex items-center justify-center gap-3 transition-colors">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+              </svg>
+              既存発信者から検索
+            </button>
+            <button onclick="openLawyerNoticeManualModal()" class="w-full py-4 bg-gray-50 hover:bg-gray-100 border-2 border-gray-200 rounded-xl text-gray-700 font-medium flex items-center justify-center gap-3 transition-colors">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+              </svg>
+              手動で入力
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 最近の登録 -->
+      <div class="bg-white rounded-xl shadow-md p-6">
+        <h3 class="text-lg font-bold text-gray-800 mb-4">📝 最近の登録</h3>
+        <div id="recent-registrations" class="space-y-2">
+          <div class="p-3 bg-blue-50 rounded-lg flex justify-between items-center">
+            <div>
+              <p class="font-medium">山田 太郎</p>
+              <p class="text-xs text-gray-500">HN-000456 / 2026/01/30登録</p>
+            </div>
+            <span class="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded">開示</span>
+          </div>
+          <div class="p-3 bg-red-50 rounded-lg flex justify-between items-center">
+            <div>
+              <p class="font-medium">鈴木 花子 → 佐藤弁護士</p>
+              <p class="text-xs text-gray-500">HN-000789 / 2026/01/29登録</p>
+            </div>
+            <span class="text-xs px-2 py-1 bg-red-100 text-red-700 rounded">受任</span>
+          </div>
+          <div class="p-3 bg-gray-50 rounded-lg flex justify-between items-center">
+            <div>
+              <p class="font-medium">高橋 四郎</p>
+              <p class="text-xs text-gray-500">HN-000890 / 2026/01/28登録</p>
+            </div>
+            <span class="text-xs px-2 py-1 bg-green-100 text-green-700 rounded">登録済</span>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- 書類送付画面（事務担当用） -->
+  <!-- ========================================== -->
+  <div id="document-send-screen" class="hidden min-h-screen">
+    <header class="bg-blue-600 text-white shadow-lg">
+      <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <span class="role-badge bg-white/20 text-white">ロールA</span>
+          <h1 class="text-lg font-bold">書類送付</h1>
+        </div>
+        <button onclick="backToRoleSelect()" class="text-blue-100 hover:text-white text-sm flex items-center gap-1">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 17l-5-5m0 0l5-5m-5 5h12"></path>
+          </svg>
+          ロール選択に戻る
+        </button>
+      </div>
+    </header>
+
+    <main class="max-w-5xl mx-auto px-4 py-6">
+      <!-- 書類選択ボタン -->
+      <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+        <p class="text-sm text-gray-600 mb-4">送付する書類を選択してください</p>
+        <div class="flex gap-3 items-stretch">
+          <button onclick="filterByDocType(1)" id="btn-1" class="doc-type-btn flex-1 p-4 border-2 border-blue-500 bg-blue-50 rounded-xl text-center transition hover:bg-blue-100">
+            <div class="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-2 text-white font-bold">1</div>
+            <p class="font-bold text-blue-800">通知書</p>
+            <p class="text-xs text-gray-500 mt-1">初回送付</p>
+          </button>
+          <button onclick="filterByDocType(2)" id="btn-2" class="doc-type-btn flex-1 p-4 border-2 border-gray-200 bg-gray-50 rounded-xl text-center transition hover:bg-orange-50 hover:border-orange-300">
+            <div class="w-10 h-10 bg-orange-500 rounded-full flex items-center justify-center mx-auto mb-2 text-white font-bold">2</div>
+            <p class="font-bold text-gray-800">２回目警告書</p>
+            <p class="text-xs text-gray-500 mt-1">通知書送付済</p>
+          </button>
+          <button onclick="filterByDocType(3)" id="btn-3" class="doc-type-btn flex-1 p-4 border-2 border-gray-200 bg-gray-50 rounded-xl text-center transition hover:bg-red-50 hover:border-red-300">
+            <div class="w-10 h-10 bg-red-500 rounded-full flex items-center justify-center mx-auto mb-2 text-white font-bold">3</div>
+            <p class="font-bold text-gray-800">３回目警告書</p>
+            <p class="text-xs text-gray-500 mt-1">2回目送付済</p>
+          </button>
+          <!-- 4回目以降はドロップダウン -->
+          <div class="flex-1 p-4 border-2 border-gray-200 bg-gray-50 rounded-xl text-center">
+            <div class="w-10 h-10 bg-purple-500 rounded-full flex items-center justify-center mx-auto mb-2 text-white font-bold">4+</div>
+            <select id="dropdown-warning" onchange="filterByDocType(parseInt(this.value))" class="w-full px-2 py-1 border border-gray-300 rounded-lg text-sm font-bold text-gray-800 bg-white">
+              <option value="4">４回目警告書</option>
+              <option value="5">５回目警告書</option>
+              <option value="6">６回目警告書</option>
+              <option value="7">７回目警告書</option>
+              <option value="8">８回目警告書</option>
+              <option value="9">９回目警告書</option>
+              <option value="10">10回目警告書</option>
+              <option value="11">11回目警告書</option>
+              <option value="12">12回目警告書</option>
+              <option value="13">13回目警告書</option>
+              <option value="14">14回目警告書</option>
+              <option value="15">15回目警告書</option>
+              <option value="16">16回目警告書</option>
+              <option value="17">17回目警告書</option>
+              <option value="18">18回目警告書</option>
+              <option value="19">19回目警告書</option>
+              <option value="20">20回目警告書</option>
+            </select>
+            <p class="text-xs text-gray-500 mt-1">4回目以降</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 説明 + アクションボタン -->
+      <div id="doc-list-header" class="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
+        <div class="flex items-center justify-between">
+          <p class="text-blue-800 text-sm">
+            <span class="font-bold">📋 <span id="selected-doc-type">通知書</span>送付対象者一覧</span>｜
+            相手方弁護士なし ／ 経過日数順 ／ 上限100件
+          </p>
+          <div class="flex gap-2">
+            <button onclick="exportCSV()" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-bold flex items-center gap-2">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+              </svg>
+              CSV出力
+            </button>
+            <button onclick="markAsSent()" id="btn-mark-sent" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-bold flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+              </svg>
+              送付済みにする (<span id="selected-count">0</span>件)
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 一覧テーブル -->
+      <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+        <table class="w-full">
+          <thead class="bg-gray-50 border-b border-gray-200">
+            <tr>
+              <th class="px-3 py-3 text-center">
+                <input type="checkbox" id="select-all" onclick="toggleSelectAll()" class="w-5 h-5 rounded">
+              </th>
+              <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase">氏名</th>
+              <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase">住所</th>
+              <th class="px-4 py-3 text-center text-xs font-bold text-gray-600 uppercase">送付回数</th>
+              <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase">前回送付</th>
+              <th class="px-4 py-3 text-center text-xs font-bold text-gray-600 uppercase">経過日数</th>
+            </tr>
+          </thead>
+          <tbody id="doc-table-body" class="divide-y divide-gray-100">
+            <!-- JavaScriptで動的に生成 -->
+          </tbody>
+        </table>
+
+        <!-- フッター -->
+        <div id="doc-table-footer" class="px-4 py-3 bg-gray-50 border-t border-gray-200 flex items-center justify-between">
+          <span class="text-sm text-gray-600">表示件数：<span id="total-count">0</span>件 ／ 上限100件</span>
+          <div class="flex gap-2">
+            <button onclick="exportCSV()" class="px-3 py-1 bg-green-100 hover:bg-green-200 text-green-700 rounded text-sm font-medium">CSV出力</button>
+            <button onclick="markAsSent()" class="px-3 py-1 bg-purple-100 hover:bg-purple-200 text-purple-700 rounded text-sm font-medium">選択を送付済みに</button>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- IPN紐付け画面 -->
+  <!-- ========================================== -->
+  <div id="ipn-link-screen" class="hidden min-h-screen">
+    <header class="bg-orange-600 text-white shadow-lg">
+      <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <span class="role-badge bg-white/20 text-white">ロールA</span>
+          <h1 class="text-lg font-bold">🔗 IPN紐付け</h1>
+        </div>
+        <button onclick="closeIpnLinkScreen()" class="text-orange-100 hover:text-white text-sm flex items-center gap-1">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 17l-5-5m0 0l5-5m-5 5h12"></path>
+          </svg>
+          登録画面に戻る
+        </button>
+      </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-4 py-6">
+      <!-- 検索エリア -->
+      <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+        <h2 class="text-lg font-bold text-gray-800 mb-4">IPNデータを検索</h2>
+        <p class="text-sm text-gray-500 mb-4">別DBからIPNデータを検索して発信者に紐付けます</p>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-600 mb-2">IPアドレス</label>
+            <input type="text" id="ipn-search-ip" placeholder="192.168.1.1"
+              class="w-full px-4 py-3 border border-gray-300 rounded-lg">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-600 mb-2">権利者</label>
+            <select id="ipn-search-holder" class="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white">
+              <option value="">すべて</option>
+              <option value="A社">A社</option>
+              <option value="B社">B社</option>
+              <option value="C社">C社</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-600 mb-2">プロバイダ</label>
+            <select id="ipn-search-provider" class="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white">
+              <option value="">すべて</option>
+              <option value="NTT">NTT</option>
+              <option value="KDDI">KDDI</option>
+              <option value="SoftBank">SoftBank</option>
+              <option value="So-net">So-net</option>
+            </select>
+          </div>
+        </div>
+        <div class="flex gap-3">
+          <button onclick="searchIpnData()" class="px-6 py-3 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-bold">
+            🔍 検索
+          </button>
+          <button onclick="clearIpnSearch()" class="px-6 py-3 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-xl font-bold">
+            クリア
+          </button>
+        </div>
+      </div>
+
+      <!-- 検索結果テーブル -->
+      <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+          <h3 class="font-bold text-gray-800">検索結果 <span id="ipn-result-count" class="text-orange-500"></span></h3>
+          <div class="text-sm text-gray-500">
+            紐付け済み: <span class="text-green-600 font-bold" id="ipn-linked-count">0</span>件 /
+            未紐付け: <span class="text-orange-600 font-bold" id="ipn-unlinked-count">0</span>件
+          </div>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="px-4 py-3 text-left text-xs font-bold text-gray-600">状態</th>
+                <th class="px-4 py-3 text-left text-xs font-bold text-gray-600">IPアドレス</th>
+                <th class="px-4 py-3 text-left text-xs font-bold text-gray-600">ポート</th>
+                <th class="px-4 py-3 text-left text-xs font-bold text-gray-600">時刻</th>
+                <th class="px-4 py-3 text-left text-xs font-bold text-gray-600">プロバイダ</th>
+                <th class="px-4 py-3 text-left text-xs font-bold text-gray-600">権利者</th>
+                <th class="px-4 py-3 text-left text-xs font-bold text-gray-600">作品名</th>
+                <th class="px-4 py-3 text-center text-xs font-bold text-gray-600">操作</th>
+              </tr>
+            </thead>
+            <tbody id="ipn-table-body" class="divide-y divide-gray-100">
+              <!-- IPNデータがここに表示される -->
+            </tbody>
+          </table>
+        </div>
+        <div id="ipn-no-results" class="hidden p-8 text-center text-gray-400">
+          検索条件を入力して検索してください
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- IPN紐付けモーダル -->
+  <div id="ipn-link-modal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden">
+      <div class="bg-orange-500 text-white px-6 py-4">
+        <h3 class="text-lg font-bold">🔗 IPNを発信者に紐付け</h3>
+      </div>
+      <div class="p-6">
+        <div class="bg-orange-50 rounded-lg p-4 mb-4">
+          <p class="text-sm text-gray-600 mb-1">紐付けるIPN</p>
+          <p class="font-bold text-gray-800" id="modal-ipn-info">-</p>
+        </div>
+        <div class="mb-4">
+          <label class="block text-sm font-medium text-gray-600 mb-2">紐付け先の発信者を検索</label>
+          <div class="flex gap-2">
+            <input type="text" id="ipn-link-search" placeholder="名前・ID・電話番号で検索"
+              class="flex-1 px-4 py-3 border border-gray-300 rounded-lg">
+            <button onclick="searchPersonForIpn()" class="px-4 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-lg">検索</button>
+          </div>
+        </div>
+        <div id="ipn-link-person-list" class="max-h-48 overflow-y-auto space-y-2 mb-4">
+          <!-- 検索結果がここに表示 -->
+        </div>
+        <div id="ipn-selected-person" class="hidden bg-green-50 rounded-lg p-4 mb-4">
+          <p class="text-sm text-gray-600 mb-1">選択中の発信者</p>
+          <p class="font-bold text-green-800" id="ipn-selected-person-name">-</p>
+        </div>
+      </div>
+      <div class="bg-gray-50 px-6 py-4 flex justify-end gap-3">
+        <button onclick="closeIpnLinkModal()" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg">キャンセル</button>
+        <button onclick="confirmIpnLink()" id="ipn-link-confirm-btn" disabled
+          class="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed">
+          紐付けを確定
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 受任通知登録モーダル -->
+  <div id="junin-modal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl mx-4 overflow-hidden max-h-[90vh] overflow-y-auto">
+      <div class="bg-red-600 text-white px-6 py-4">
+        <h3 class="text-lg font-bold">📩 受任通知を登録</h3>
+        <p class="text-red-100 text-sm">弁護士から受任通知が届いた場合に登録してください</p>
+      </div>
+      <div class="p-6">
+        <!-- 既存/新規選択 -->
+        <div class="mb-6">
+          <label class="block text-sm font-bold text-gray-700 mb-3">対象の発信者</label>
+          <div class="flex gap-4 mb-4">
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="radio" name="junin-person-type" value="existing" checked onchange="toggleJuninPersonType()">
+              <span>既存の発信者に追加</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="radio" name="junin-person-type" value="new" onchange="toggleJuninPersonType()">
+              <span>新規発信者として登録</span>
+            </label>
+          </div>
+
+          <!-- 既存発信者検索 -->
+          <div id="junin-existing-section">
+            <div class="flex gap-2 mb-3">
+              <input type="text" id="junin-search" placeholder="名前・ID・電話番号で検索"
+                class="flex-1 px-4 py-3 border border-gray-300 rounded-lg">
+              <button onclick="searchPersonForJunin()" class="px-4 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-lg">検索</button>
+            </div>
+            <div id="junin-person-list" class="max-h-32 overflow-y-auto space-y-2 mb-3">
+              <!-- 検索結果 -->
+            </div>
+            <div id="junin-selected-person" class="hidden bg-blue-50 rounded-lg p-3 border-2 border-blue-300">
+              <p class="text-xs text-gray-500">選択中</p>
+              <p class="font-bold text-blue-800" id="junin-selected-person-name">-</p>
+            </div>
+          </div>
+
+          <!-- 新規発信者入力 -->
+          <div id="junin-new-section" class="hidden space-y-4">
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-600 mb-1">氏名 <span class="text-red-500">*</span></label>
+                <input type="text" id="junin-new-name" placeholder="山田 太郎" class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-600 mb-1">電話番号</label>
+                <input type="text" id="junin-new-phone" placeholder="090-1234-5678" class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+              </div>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-600 mb-1">住所</label>
+              <input type="text" id="junin-new-address" placeholder="東京都..." class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+            </div>
+          </div>
+        </div>
+
+        <!-- 弁護士情報（必須） -->
+        <div class="bg-red-50 rounded-lg p-4 border border-red-200">
+          <label class="block text-sm font-bold text-red-700 mb-3">⚠ 弁護士情報（必須）</label>
+          <div class="space-y-4">
+            <!-- 弁護士コード入力 -->
+            <div>
+              <label class="block text-sm font-medium text-gray-600 mb-1">弁護士コード <span class="text-red-500">*</span></label>
+              <div class="flex gap-3 items-start">
+                <div class="w-24">
+                  <input type="text" id="junin-lawyer-code" maxlength="2" placeholder="TN"
+                    oninput="onLawyerCodeInput()"
+                    class="w-full px-4 py-3 border-2 border-red-300 rounded-lg text-center text-xl font-bold uppercase tracking-widest">
+                </div>
+                <div id="junin-lawyer-info" class="flex-1 bg-white rounded-lg p-3 border border-gray-200 min-h-[60px]">
+                  <p class="text-gray-400 text-sm">2文字のコードを入力してください</p>
+                </div>
+              </div>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-600 mb-1">受任通知日 <span class="text-red-500">*</span></label>
+              <input type="date" id="junin-date" class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-600 mb-1">備考</label>
+              <textarea id="junin-note" rows="2" placeholder="その他連絡事項など" class="w-full px-4 py-2 border border-gray-300 rounded-lg resize-none"></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="bg-gray-50 px-6 py-4 flex justify-end gap-3">
+        <button onclick="closeJuninModal()" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg">キャンセル</button>
+        <button onclick="confirmJuninRegistration()" id="junin-confirm-btn"
+          class="px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-bold">
+          受任通知を登録
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 弁護士受任通知 手動入力モーダル -->
+  <div id="lawyer-notice-manual-modal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl mx-4 overflow-hidden max-h-[90vh] overflow-y-auto">
+      <div class="bg-red-600 text-white px-6 py-4">
+        <div class="flex items-center justify-between">
+          <div>
+            <h3 class="text-lg font-bold">⚖️ 弁護士受任通知登録（手動入力）</h3>
+            <p class="text-red-100 text-sm">発信者情報と弁護士情報を入力</p>
+          </div>
+          <button onclick="closeLawyerNoticeManualModal()" class="text-white/70 hover:text-white">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+      <div class="p-6">
+        <!-- 契約者情報 -->
+        <div class="space-y-4 mb-6">
+          <p class="text-sm font-bold text-gray-700 border-b pb-2">📋 契約者情報</p>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-600 mb-1">契約者名 <span class="text-red-500">*</span></label>
+              <input type="text" id="lawyer-manual-name" placeholder="山田 太郎" class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-600 mb-1">ふりがな</label>
+              <input type="text" id="lawyer-manual-name-kana" placeholder="やまだ たろう" class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+            </div>
+          </div>
+        </div>
+
+        <!-- 利用者情報 -->
+        <div class="space-y-4 mb-6">
+          <p class="text-sm font-bold text-gray-700 border-b pb-2">👤 利用者情報</p>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-600 mb-1">利用者名</label>
+              <input type="text" id="lawyer-manual-user-name" placeholder="山田 次郎" class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-600 mb-1">ふりがな</label>
+              <input type="text" id="lawyer-manual-user-kana" placeholder="やまだ じろう" class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+            </div>
+          </div>
+        </div>
+
+        <!-- 連絡先情報 -->
+        <div class="space-y-4 mb-6">
+          <p class="text-sm font-bold text-gray-700 border-b pb-2">📍 連絡先</p>
+          <div class="grid grid-cols-3 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-600 mb-1">郵便番号</label>
+              <input type="text" id="lawyer-manual-postal" placeholder="123-4567" class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+            </div>
+            <div class="col-span-2">
+              <label class="block text-sm font-medium text-gray-600 mb-1">住所 <span class="text-red-500">*</span></label>
+              <input type="text" id="lawyer-manual-address" placeholder="東京都新宿区西新宿1-1-1" class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-600 mb-1">電話番号</label>
+              <input type="text" id="lawyer-manual-phone" placeholder="090-1234-5678" class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-600 mb-1">電子メール</label>
+              <input type="email" id="lawyer-manual-email" placeholder="example@email.com" class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+            </div>
+          </div>
+        </div>
+
+        <!-- 弁護士情報 -->
+        <div class="space-y-4 mb-6 bg-red-50 p-4 rounded-lg border border-red-200">
+          <p class="text-sm font-bold text-red-700 border-b border-red-200 pb-2">⚖️ 弁護士情報</p>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-600 mb-1">弁護士コード <span class="text-red-500">*</span></label>
+              <div class="flex gap-2">
+                <input type="text" id="lawyer-manual-code" placeholder="L001" class="flex-1 px-4 py-2 border border-gray-300 rounded-lg" onblur="lookupLawyerByCodeManual()">
+                <button onclick="openLawyerMasterSelectManual()" class="px-3 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg text-xs">
+                  選択
+                </button>
+              </div>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-600 mb-1">弁護士名</label>
+              <input type="text" id="lawyer-manual-lawyer-name" placeholder="自動入力" readonly class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50">
+            </div>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-600 mb-1">受任日</label>
+            <input type="date" id="lawyer-manual-date" class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+          </div>
+        </div>
+
+        <!-- メモ -->
+        <div class="mb-6">
+          <label class="block text-sm font-medium text-gray-600 mb-1">メモ</label>
+          <textarea id="lawyer-manual-memo" rows="2" placeholder="備考など..." class="w-full px-4 py-2 border border-gray-300 rounded-lg resize-none"></textarea>
+        </div>
+      </div>
+      <div class="bg-gray-50 px-6 py-4 flex justify-end gap-3">
+        <button onclick="closeLawyerNoticeManualModal()" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg">キャンセル</button>
+        <button onclick="saveLawyerNoticeManual()" class="px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-bold">
+          登録
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 弁護士受任通知登録モーダル -->
+  <div id="lawyer-notice-modal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden">
+      <div class="bg-red-600 text-white px-6 py-4">
+        <div class="flex items-center justify-between">
+          <div>
+            <h3 class="text-lg font-bold">⚖️ 弁護士受任通知登録</h3>
+            <p class="text-red-100 text-sm">相手方弁護士からの受任通知を登録</p>
+          </div>
+          <button onclick="closeLawyerNoticeModal()" class="text-white/70 hover:text-white">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+      <div class="p-6">
+        <!-- 発信者検索 -->
+        <div class="mb-6">
+          <label class="block text-sm font-medium text-gray-600 mb-2">発信者を検索 <span class="text-red-500">*</span></label>
+          <div class="flex gap-2">
+            <input type="text" id="lawyer-notice-search" placeholder="名前またはHN番号で検索"
+              class="flex-1 px-4 py-2 border border-gray-300 rounded-lg">
+            <button onclick="searchForLawyerNotice()" class="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg">検索</button>
+          </div>
+          <div id="lawyer-notice-search-result" class="mt-2 hidden">
+            <!-- 検索結果 -->
+          </div>
+          <div id="lawyer-notice-selected" class="mt-3 hidden p-3 bg-red-50 border border-red-200 rounded-lg">
+            <p class="text-sm text-gray-500">選択中:</p>
+            <p class="font-bold text-red-800" id="lawyer-notice-selected-name"></p>
+            <p class="text-xs text-gray-500" id="lawyer-notice-selected-hn"></p>
+          </div>
+        </div>
+
+        <!-- 弁護士情報 -->
+        <div class="space-y-4">
+          <p class="text-sm font-bold text-gray-700 border-b pb-2">弁護士情報</p>
+          <div>
+            <label class="block text-sm font-medium text-gray-600 mb-1">弁護士コード <span class="text-red-500">*</span></label>
+            <div class="flex gap-2">
+              <input type="text" id="lawyer-notice-code" placeholder="例: L001"
+                class="flex-1 px-4 py-2 border border-gray-300 rounded-lg" onblur="lookupLawyerByCode()">
+              <button onclick="openLawyerMasterSelect()" class="px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg text-sm">
+                一覧から選択
+              </button>
+            </div>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-600 mb-1">弁護士名</label>
+            <input type="text" id="lawyer-notice-name" placeholder="自動入力されます" readonly
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-600 mb-1">受任日</label>
+            <input type="date" id="lawyer-notice-date" class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-600 mb-1">備考</label>
+            <textarea id="lawyer-notice-memo" rows="2" placeholder="連絡事項など" class="w-full px-4 py-2 border border-gray-300 rounded-lg resize-none"></textarea>
+          </div>
+        </div>
+      </div>
+      <div class="bg-gray-50 px-6 py-4 flex justify-end gap-3">
+        <button onclick="closeLawyerNoticeModal()" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg">キャンセル</button>
+        <button onclick="saveLawyerNotice()" class="px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-bold">
+          登録
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CSVアップロードモーダル -->
+  <div id="csv-upload-modal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl mx-4 overflow-hidden max-h-[90vh] overflow-y-auto">
+      <div class="bg-blue-600 text-white px-6 py-4">
+        <div class="flex items-center justify-between">
+          <div>
+            <h3 class="text-lg font-bold">📁 CSVからアップロード</h3>
+            <p class="text-blue-100 text-sm">開示結果を一括登録します</p>
+          </div>
+          <button onclick="closeCsvUploadModal()" class="text-white/70 hover:text-white">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+      <div class="p-6">
+        <!-- ファイル選択 -->
+        <div class="mb-6">
+          <div class="border-2 border-dashed border-blue-300 rounded-xl p-8 text-center bg-blue-50/50 hover:bg-blue-50 transition-colors cursor-pointer" onclick="document.getElementById('csv-file-input').click()">
+            <svg class="w-12 h-12 text-blue-400 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+            </svg>
+            <p class="text-blue-600 font-medium mb-1">クリックしてファイルを選択</p>
+            <p class="text-sm text-gray-500">またはドラッグ＆ドロップ</p>
+            <input type="file" id="csv-file-input" accept=".csv" class="hidden" onchange="handleCsvFileSelect(event)">
+          </div>
+          <p id="csv-file-name" class="mt-2 text-sm text-gray-600 hidden"></p>
+        </div>
+
+        <!-- CSVフォーマット説明 -->
+        <div class="mb-6 p-4 bg-gray-50 rounded-lg">
+          <p class="text-sm font-medium text-gray-700 mb-2">📋 CSVフォーマット</p>
+          <p class="text-xs text-gray-500 mb-2">以下のカラムを含むCSVファイルをアップロードしてください</p>
+          <div class="text-xs text-gray-600 font-mono bg-white p-2 rounded border">
+            契約者名,ふりがな,利用者名,利用者ふりがな,郵便番号,住所,電話番号,電子メール,メモ
+          </div>
+        </div>
+
+        <!-- プレビュー -->
+        <div id="csv-preview-section" class="hidden mb-6">
+          <div class="flex items-center justify-between mb-2">
+            <p class="text-sm font-medium text-gray-700">📝 プレビュー</p>
+            <span id="csv-preview-count" class="text-sm text-blue-600"></span>
+          </div>
+          <div class="max-h-48 overflow-y-auto border rounded-lg">
+            <table class="w-full text-sm">
+              <thead class="bg-gray-50 sticky top-0">
+                <tr>
+                  <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">契約者名</th>
+                  <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">住所</th>
+                  <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">電話</th>
+                  <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">利用者</th>
+                </tr>
+              </thead>
+              <tbody id="csv-preview-tbody" class="divide-y divide-gray-100">
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- 重複チェック結果 -->
+        <div id="csv-duplicate-section" class="hidden mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+          <p class="text-sm font-medium text-yellow-800 mb-2">⚠️ 重複の可能性あり</p>
+          <div id="csv-duplicate-list" class="text-sm text-yellow-700"></div>
+        </div>
+
+        <!-- ボタン -->
+        <div class="flex gap-3">
+          <button onclick="closeCsvUploadModal()" class="flex-1 py-3 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50">
+            キャンセル
+          </button>
+          <button id="csv-import-btn" onclick="executeCsvImport()" disabled class="flex-1 py-3 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed">
+            登録する
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 新規発信者登録モーダル -->
+  <div id="new-person-modal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl mx-4 overflow-hidden max-h-[90vh] overflow-y-auto">
+      <div class="bg-purple-600 text-white px-6 py-4">
+        <h3 class="text-lg font-bold">📋 新規発信者を登録</h3>
+        <p class="text-purple-100 text-sm">開示結果から発信者情報を登録します</p>
+      </div>
+      <div class="p-6">
+        <!-- 契約者情報 -->
+        <div class="space-y-4 mb-6">
+          <p class="text-sm font-bold text-gray-700 border-b pb-2">📋 契約者情報</p>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-600 mb-1">契約者名 <span class="text-red-500">*</span></label>
+              <input type="text" id="new-person-name" placeholder="山田 太郎" class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-600 mb-1">ふりがな</label>
+              <input type="text" id="new-person-name-kana" placeholder="やまだ たろう" class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+            </div>
+          </div>
+        </div>
+
+        <!-- 利用者情報 -->
+        <div class="space-y-4 mb-6">
+          <p class="text-sm font-bold text-gray-700 border-b pb-2">👤 利用者情報</p>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-600 mb-1">利用者名</label>
+              <input type="text" id="new-person-user-name" placeholder="山田 次郎" class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-600 mb-1">ふりがな</label>
+              <input type="text" id="new-person-user-kana" placeholder="やまだ じろう" class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+            </div>
+          </div>
+        </div>
+
+        <!-- 連絡先情報 -->
+        <div class="space-y-4 mb-6">
+          <p class="text-sm font-bold text-gray-700 border-b pb-2">📍 連絡先</p>
+          <div class="grid grid-cols-3 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-600 mb-1">郵便番号</label>
+              <input type="text" id="new-person-postal" placeholder="123-4567" class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+            </div>
+            <div class="col-span-2">
+              <label class="block text-sm font-medium text-gray-600 mb-1">住所 <span class="text-red-500">*</span></label>
+              <input type="text" id="new-person-address" placeholder="東京都新宿区西新宿1-1-1" class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-600 mb-1">電話番号</label>
+              <input type="text" id="new-person-phone" placeholder="090-1234-5678" class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-600 mb-1">電子メール</label>
+              <input type="email" id="new-person-email" placeholder="example@email.com" class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+            </div>
+          </div>
+        </div>
+
+        <!-- メモ -->
+        <div class="mb-6">
+          <label class="block text-sm font-medium text-gray-600 mb-1">メモ</label>
+          <textarea id="new-person-memo" rows="3" placeholder="備考など..." class="w-full px-4 py-2 border border-gray-300 rounded-lg resize-none"></textarea>
+        </div>
+
+        <!-- 類似チェック結果表示エリア -->
+        <div id="similar-check-result" class="hidden mb-6">
+          <div class="bg-yellow-50 border-2 border-yellow-300 rounded-lg p-4">
+            <p class="text-yellow-800 font-bold mb-2">⚠ 類似する発信者が見つかりました</p>
+            <p class="text-sm text-yellow-700 mb-3">同一人物の可能性があります。確認してください。</p>
+            <div id="similar-person-list" class="space-y-2 max-h-40 overflow-y-auto">
+              <!-- 類似発信者リスト -->
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="bg-gray-50 px-6 py-4 flex justify-between">
+        <button onclick="checkSimilarPersons()" class="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg">
+          類似チェック
+        </button>
+        <div class="flex gap-3">
+          <button onclick="closeNewPersonModal()" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg">キャンセル</button>
+          <button onclick="confirmNewPersonRegistration()" id="new-person-confirm-btn"
+            class="px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-bold">
+            登録
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- 交渉記録画面（事務担当用） -->
+  <!-- ========================================== -->
+  <div id="negotiation-screen" class="hidden min-h-screen">
+    <header class="bg-blue-600 text-white shadow-lg">
+      <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <span class="role-badge bg-white/20 text-white">ロールA</span>
+          <h1 class="text-lg font-bold">交渉記録</h1>
+          <span class="text-blue-200 text-sm">ログイン: <span id="nego-login-user" class="font-bold text-white">-</span></span>
+        </div>
+        <button onclick="backToRoleSelect()" class="text-blue-100 hover:text-white text-sm flex items-center gap-1">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 17l-5-5m0 0l5-5m-5 5h12"></path>
+          </svg>
+          ロール選択に戻る
+        </button>
+      </div>
+    </header>
+
+    <main class="max-w-4xl mx-auto px-4 py-6">
+      <!-- 検索エリア -->
+      <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+        <h2 class="text-lg font-bold text-gray-800 mb-4">発信者を検索</h2>
+        <p class="text-sm text-gray-500 mb-3">発信者ID、名前、電話番号のいずれかで検索できます</p>
+        <div class="flex gap-3">
+          <input type="text" id="search-name-nego" placeholder="例：HN-000456 / 山田 太郎 / 090-1234-5678"
+            class="flex-1 px-4 py-3 text-lg border-2 border-blue-300 rounded-xl form-input">
+          <button onclick="searchForNegotiation()" class="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-xl font-bold">
+            検索
+          </button>
+        </div>
+      </div>
+
+      <!-- 検索結果リスト（複数件の場合） -->
+      <div id="nego-search-results" class="hidden bg-white rounded-xl shadow-lg p-6 mb-6">
+        <h3 class="text-lg font-bold text-gray-800 mb-4">🔍 検索結果 <span id="search-result-count" class="text-blue-500"></span></h3>
+        <p class="text-sm text-gray-500 mb-4">対象者をクリックして選択してください</p>
+        <div id="search-result-list" class="space-y-2 max-h-80 overflow-y-auto">
+          <!-- 検索結果がここに表示される -->
+        </div>
+      </div>
+
+      <!-- 検索結果・記録フォーム（選択後に表示） -->
+      <div id="nego-result" class="hidden">
+        <!-- 対象者情報カード（クリックで詳細へ） -->
+        <div onclick="openPersonDetail()" class="bg-white rounded-xl shadow-lg p-6 mb-6 cursor-pointer hover:shadow-xl hover:bg-blue-50 transition-all border-2 border-transparent hover:border-blue-300">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-4">
+              <div class="w-14 h-14 bg-blue-100 rounded-full flex items-center justify-center">
+                <svg class="w-7 h-7 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                </svg>
+              </div>
+              <div>
+                <h3 class="text-xl font-bold text-gray-800" id="nego-person-name">山田 太郎</h3>
+                <p class="text-gray-500"><span id="nego-person-id">HN-000456</span> ｜ <span id="nego-person-phone">090-1234-5678</span></p>
+              </div>
+            </div>
+            <div class="flex items-center gap-3">
+              <div id="nego-lawyer-status" class="px-4 py-2 bg-green-100 text-green-800 rounded-lg font-bold">
+                本人対応
+              </div>
+              <div class="text-blue-500">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                </svg>
+              </div>
+            </div>
+          </div>
+          <!-- 基本情報サマリー -->
+          <div id="nego-person-summary" class="mt-4 pt-4 border-t border-gray-200 grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+            <div>
+              <p class="text-gray-500">和解状況</p>
+              <p id="nego-summary-settlement" class="font-bold text-gray-800">交渉中</p>
+            </div>
+            <div>
+              <p class="text-gray-500">請求額</p>
+              <p id="nego-summary-amount" class="font-bold text-gray-800">¥150,000</p>
+            </div>
+            <div>
+              <p class="text-gray-500">書類送付</p>
+              <p id="nego-summary-docs" class="font-bold text-gray-800">2回目警告書</p>
+            </div>
+            <div>
+              <p class="text-gray-500">最終連絡</p>
+              <p id="nego-summary-lastcontact" class="font-bold text-gray-800">3日前</p>
+            </div>
+          </div>
+          <p class="text-xs text-blue-500 mt-3 text-right">クリックして詳細情報を表示 →</p>
+        </div>
+
+        <!-- 記録入力フォーム -->
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+          <h3 class="text-lg font-bold text-gray-800 mb-4">📝 交渉記録を追加</h3>
+          <div class="space-y-4">
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-600 mb-2">連絡種別</label>
+                <select id="nego-type" class="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-800 bg-white">
+                  <option value="phone">📞 電話</option>
+                  <option value="email">📧 メール</option>
+                  <option value="other">📋 その他</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-600 mb-2">日時</label>
+                <input type="datetime-local" id="nego-datetime" class="w-full px-4 py-3 border border-gray-300 rounded-lg">
+              </div>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-600 mb-2">内容</label>
+              <textarea id="nego-content" rows="4" placeholder="交渉内容を入力..." class="w-full px-4 py-3 border border-gray-300 rounded-lg resize-none"></textarea>
+            </div>
+            <button onclick="addNegotiationRecord()" class="w-full py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-bold text-lg">
+              記録を追加
+            </button>
+          </div>
+        </div>
+
+        <!-- 交渉タイムライン -->
+        <div class="bg-white rounded-xl shadow-lg p-6">
+          <h3 class="text-lg font-bold text-gray-800 mb-4">📜 交渉履歴</h3>
+          <div id="nego-timeline" class="relative pl-6 border-l-2 border-blue-200 space-y-4">
+            <!-- 動的に追加 -->
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- ロールB: 管理者UI -->
+  <!-- ========================================== -->
+  <div id="role-b-screen" class="hidden min-h-screen">
+    <header class="bg-amber-600 text-white shadow-lg">
+      <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <span class="role-badge bg-white/20 text-white">ロールB</span>
+          <h1 class="text-lg font-bold">管理者</h1>
+        </div>
+        <button onclick="backToRoleSelect()" class="text-amber-100 hover:text-white text-sm flex items-center gap-1">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 17l-5-5m0 0l5-5m-5 5h12"></path>
+          </svg>
+          ロール選択に戻る
+        </button>
+      </div>
+    </header>
+
+    <main class="max-w-4xl mx-auto px-4 py-8">
+      <!-- メイン検索エリア -->
+      <div class="bg-white rounded-2xl shadow-xl p-8 mb-6">
+        <h2 class="text-xl font-bold text-gray-800 mb-6 text-center">発信者を検索</h2>
+
+        <!-- 名前検索（メイン） -->
+        <div class="mb-6">
+          <label class="block text-sm font-medium text-gray-600 mb-2">名前で検索（よく使う）</label>
+          <div class="flex gap-3">
+            <input type="text" id="search-name-b" placeholder="山田 太郎"
+              class="flex-1 px-5 py-4 text-lg border-2 border-amber-300 rounded-xl form-input search-highlight">
+            <button onclick="searchByName('B')" class="bg-amber-500 hover:bg-amber-600 text-white px-8 py-4 rounded-xl font-bold text-lg">
+              検索
+            </button>
+          </div>
+        </div>
+
+        <!-- その他の検索 -->
+        <div class="grid grid-cols-3 gap-4 pt-4 border-t border-gray-200">
+          <div>
+            <label class="block text-xs text-gray-500 mb-1">発信者IDで検索</label>
+            <div class="flex gap-2">
+              <input type="text" placeholder="HN-000000" class="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg form-input">
+              <button class="px-3 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg text-sm">検索</button>
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs text-gray-500 mb-1">IPNで検索</label>
+            <div class="flex gap-2">
+              <input type="text" placeholder="IPN-2026-000000" class="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg form-input">
+              <button class="px-3 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg text-sm">検索</button>
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs text-gray-500 mb-1">住所で検索</label>
+            <div class="flex gap-2">
+              <input type="text" placeholder="新宿区" class="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg form-input">
+              <button class="px-3 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg text-sm">検索</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- タスクカード -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="bg-white rounded-xl shadow-md p-4 card-hover border-l-4 border-amber-500 cursor-pointer">
+          <p class="text-sm text-gray-500">受任登録待ち</p>
+          <p class="text-2xl font-bold text-amber-600">3件</p>
+          <p class="text-xs text-gray-400 mt-1">→ クリックで一覧</p>
+        </div>
+        <div class="bg-white rounded-xl shadow-md p-4 card-hover border-l-4 border-purple-500 cursor-pointer">
+          <p class="text-sm text-gray-500">HN紐付け待ち</p>
+          <p class="text-2xl font-bold text-purple-600">7件</p>
+          <p class="text-xs text-gray-400 mt-1">→ クリックで一覧</p>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- ロールC: 弁護士UI -->
+  <!-- ========================================== -->
+  <div id="role-c-screen" class="hidden min-h-screen">
+    <header class="bg-green-600 text-white shadow-lg">
+      <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <span class="role-badge bg-white/20 text-white">ロールC</span>
+          <h1 class="text-lg font-bold">弁護士</h1>
+        </div>
+        <button onclick="backToRoleSelect()" class="text-green-100 hover:text-white text-sm flex items-center gap-1">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 17l-5-5m0 0l5-5m-5 5h12"></path>
+          </svg>
+          ロール選択に戻る
+        </button>
+      </div>
+    </header>
+
+    <main class="max-w-4xl mx-auto px-4 py-8">
+      <!-- メイン検索エリア -->
+      <div class="bg-white rounded-2xl shadow-xl p-8 mb-6">
+        <h2 class="text-xl font-bold text-gray-800 mb-6 text-center">発信者を検索</h2>
+
+        <!-- 名前検索（メイン） -->
+        <div>
+          <label class="block text-sm font-medium text-gray-600 mb-2">名前で検索</label>
+          <div class="flex gap-3">
+            <input type="text" id="search-name-c" placeholder="山田 太郎"
+              class="flex-1 px-5 py-4 text-lg border-2 border-green-300 rounded-xl form-input search-highlight">
+            <button onclick="searchByName('C')" class="bg-green-500 hover:bg-green-600 text-white px-8 py-4 rounded-xl font-bold text-lg">
+              検索
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 要対応一覧 -->
+      <div class="bg-white rounded-xl shadow-md overflow-hidden">
+        <div class="p-4 border-b border-gray-100 bg-amber-50">
+          <h3 class="font-bold text-amber-800">⚠ 要対応（判断待ち）</h3>
+        </div>
+        <div class="divide-y divide-gray-100">
+          <!-- 相手方弁護士あり：赤背景 -->
+          <div class="p-4 hover:bg-red-100 cursor-pointer bg-red-50 border-l-4 border-red-500" onclick="openPersonDetail('HN-000456', '山田 太郎', 'yes')">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-red-500 rounded-full flex items-center justify-center text-white font-bold text-lg">⚠</div>
+                <div>
+                  <p class="font-bold text-gray-800">山田 太郎</p>
+                  <p class="text-sm text-gray-500">HN-000456</p>
+                </div>
+              </div>
+              <div class="text-right">
+                <span class="px-3 py-1 bg-red-600 text-white rounded-full text-sm font-bold">⚠ 弁護士あり</span>
+                <p class="text-xs text-red-600 mt-1">田中弁護士</p>
+              </div>
+            </div>
+          </div>
+          <!-- 確認中：黄色背景 -->
+          <div class="p-4 hover:bg-amber-100 cursor-pointer bg-amber-50 border-l-4 border-amber-500" onclick="openPersonDetail('HN-000345', '高橋 三郎', 'pending')">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-amber-500 rounded-full flex items-center justify-center text-white font-bold text-lg">?</div>
+                <div>
+                  <p class="font-bold text-gray-800">高橋 三郎</p>
+                  <p class="text-sm text-gray-500">HN-000345</p>
+                </div>
+              </div>
+              <div class="text-right">
+                <span class="px-3 py-1 bg-amber-500 text-white rounded-full text-sm font-bold">確認中</span>
+                <p class="text-xs text-amber-600 mt-1">14日更新なし</p>
+              </div>
+            </div>
+          </div>
+          <!-- 本人対応：緑背景 -->
+          <div class="p-4 hover:bg-green-100 cursor-pointer bg-green-50 border-l-4 border-green-500" onclick="openPersonDetail('HN-000234', '鈴木 次郎', 'no')">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center text-white font-bold text-lg">○</div>
+                <div>
+                  <p class="font-bold text-gray-800">鈴木 次郎</p>
+                  <p class="text-sm text-gray-500">HN-000234</p>
+                </div>
+              </div>
+              <div class="text-right">
+                <span class="px-3 py-1 bg-green-600 text-white rounded-full text-sm font-bold">本人対応</span>
+                <p class="text-xs text-green-600 mt-1">弁護士なし</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- 個人詳細画面（検索結果から遷移） -->
+  <!-- ========================================== -->
+  <div id="person-detail-screen" class="hidden min-h-screen">
+    <header class="elegant-header text-white shadow-lg">
+      <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <button onclick="backToSearch()" class="text-purple-200 hover:text-white flex items-center gap-1">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+            </svg>
+            戻る
+          </button>
+          <h1 class="text-lg font-bold">発信者詳細</h1>
+        </div>
+        <div id="current-role-badge" class="role-badge bg-white/20 text-white">ロールA</div>
+      </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 py-6">
+      <!-- ★★★★★ 相手方弁護士状況：最重要表示（画面最上部・最大サイズ） ★★★★★ -->
+      <div id="mandate-hero" class="mandate-hero-yes rounded-2xl shadow-2xl mb-6 p-6 text-white">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-5">
+            <div class="w-20 h-20 bg-white/20 rounded-2xl flex items-center justify-center">
+              <svg id="mandate-icon" class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+              </svg>
+            </div>
+            <div>
+              <p class="text-white/80 text-sm font-medium mb-1">相手方弁護士</p>
+              <p id="mandate-status-text" class="text-4xl font-black tracking-tight">⚠ 弁護士あり</p>
+              <p id="mandate-lawyer-text" class="text-lg text-white/90 mt-1">田中法律事務所 田中弁護士</p>
+            </div>
+          </div>
+          <div id="mandate-doc-permission" class="text-right hidden">
+          </div>
+        </div>
+      </div>
+
+      <!-- 個人情報ヘッダー -->
+      <div class="sticky-status bg-white rounded-xl shadow-lg mb-6 overflow-hidden">
+        <div class="p-4 border-b border-gray-100">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
+                <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                </svg>
+              </div>
+              <div>
+                <h2 class="text-xl font-bold text-gray-800" id="detail-name">山田 太郎</h2>
+                <p class="text-gray-500" id="detail-hn-id">HN-000456</p>
+              </div>
+            </div>
+            <div class="text-right text-sm text-gray-500">
+              最終更新：2026/01/30 14:30
+            </div>
+          </div>
+        </div>
+
+        <!-- 和解状況表示 -->
+        <div class="p-4">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-xs text-gray-500 mb-1">和解状況</p>
+              <span class="status-badge status-yellow">
+                <span class="w-2 h-2 rounded-full bg-yellow-500"></span>
+                交渉中
+              </span>
+            </div>
+            <div class="text-xs text-yellow-700 bg-yellow-50 px-3 py-1.5 rounded-lg">
+              最終交渉：2026/01/28（3日前）
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- タブナビゲーション -->
+      <div class="flex gap-2 mb-6 overflow-x-auto">
+        <button onclick="switchTab('info')" class="tab-btn tab-active px-4 py-2 rounded-lg font-medium whitespace-nowrap" data-tab="info">
+          基本情報
+        </button>
+        <button onclick="switchTab('disclosure')" class="tab-btn tab-inactive px-4 py-2 rounded-lg font-medium whitespace-nowrap" data-tab="disclosure">
+          開示結果
+        </button>
+        <button onclick="switchTab('documents')" class="tab-btn tab-inactive px-4 py-2 rounded-lg font-medium whitespace-nowrap" data-tab="documents">
+          書類送付
+        </button>
+        <button onclick="switchTab('negotiation')" class="tab-btn tab-inactive px-4 py-2 rounded-lg font-medium whitespace-nowrap" data-tab="negotiation">
+          交渉記録
+        </button>
+        <button onclick="switchTab('settlement')" class="tab-btn tab-inactive px-4 py-2 rounded-lg font-medium whitespace-nowrap" data-tab="settlement">
+          和解管理
+        </button>
+      </div>
+
+      <!-- タブ1: 基本情報 -->
+      <div id="tab-info" class="tab-content">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div class="bg-white rounded-xl shadow-md p-6">
+            <h3 class="text-lg font-bold text-gray-800 mb-4">個人情報</h3>
+            <div class="space-y-3">
+              <div class="flex justify-between py-2 border-b border-gray-100">
+                <span class="text-gray-500">氏名</span>
+                <span class="font-medium">山田 太郎</span>
+              </div>
+              <div class="flex justify-between py-2 border-b border-gray-100">
+                <span class="text-gray-500">住所</span>
+                <span class="font-medium">東京都新宿区西新宿1-1-1</span>
+              </div>
+              <div class="flex justify-between py-2 border-b border-gray-100">
+                <span class="text-gray-500">電話番号</span>
+                <span class="font-medium">090-1234-5678</span>
+              </div>
+              <div class="flex justify-between py-2 border-b border-gray-100">
+                <span class="text-gray-500">メール</span>
+                <span class="font-medium">yamada@example.com</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- タブ2: 開示結果 -->
+      <div id="tab-disclosure" class="tab-content hidden">
+        <div class="bg-white rounded-xl shadow-md p-6">
+          <h3 class="text-lg font-bold text-gray-800 mb-4">📋 開示結果一覧</h3>
+          <div id="disclosure-ipn-list" class="space-y-2">
+            <div class="p-3 bg-gray-50 rounded-lg hover:bg-blue-50 cursor-pointer">
+              <div class="flex justify-between items-center">
+                <div>
+                  <p class="font-medium text-blue-800">IPN-2026-001234</p>
+                  <p class="text-xs text-gray-500">NTTドコモ / 2026/01/10開示</p>
+                </div>
+                <span class="text-xs px-2 py-1 bg-green-100 text-green-700 rounded">開示済</span>
+              </div>
+            </div>
+            <div class="p-3 bg-gray-50 rounded-lg hover:bg-blue-50 cursor-pointer">
+              <div class="flex justify-between items-center">
+                <div>
+                  <p class="font-medium text-blue-800">IPN-2026-001235</p>
+                  <p class="text-xs text-gray-500">KDDI / 2026/01/12開示</p>
+                </div>
+                <span class="text-xs px-2 py-1 bg-green-100 text-green-700 rounded">開示済</span>
+              </div>
+            </div>
+          </div>
+          <div id="disclosure-ipn-empty" class="hidden text-center py-4 text-gray-400">
+            開示結果はありません
+          </div>
+        </div>
+      </div>
+
+      <!-- タブ3: 書類送付 -->
+      <div id="tab-documents" class="tab-content hidden">
+        <div id="doc-send-guard" class="mb-6 p-4 rounded-xl bg-green-50 border border-green-200">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+              <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+              </svg>
+            </div>
+            <div>
+              <p class="font-bold text-green-800">🟢 弁護士受任済（佐藤弁護士）</p>
+              <p class="text-sm text-green-700">弁護士名義書類：送付可</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div class="bg-white rounded-xl shadow-md p-6">
+            <h3 class="text-lg font-bold text-gray-800 mb-4">書類送付</h3>
+            <div class="space-y-3">
+              <div>
+                <p class="text-sm font-medium text-gray-600 mb-2">事務名義書類</p>
+                <div class="flex flex-wrap gap-2">
+                  <button class="px-3 py-2 bg-blue-100 text-blue-700 rounded-lg text-sm hover:bg-blue-200">事実通知書</button>
+                  <button class="px-3 py-2 bg-blue-100 text-blue-700 rounded-lg text-sm hover:bg-blue-200">任意連絡書</button>
+                </div>
+              </div>
+              <div>
+                <p class="text-sm font-medium text-gray-600 mb-2">弁護士名義書類</p>
+                <div class="flex flex-wrap gap-2">
+                  <button class="px-3 py-2 bg-purple-100 text-purple-700 rounded-lg text-sm hover:bg-purple-200">和解提案書</button>
+                  <button class="px-3 py-2 bg-purple-100 text-purple-700 rounded-lg text-sm hover:bg-purple-200">催告書</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-white rounded-xl shadow-md p-6">
+            <h3 class="text-lg font-bold text-gray-800 mb-4">送付履歴</h3>
+            <div class="space-y-2 text-sm">
+              <div class="flex justify-between py-2 border-b border-gray-100">
+                <span>2026/01/28 催告書</span>
+                <span class="text-purple-600">弁護士名義</span>
+              </div>
+              <div class="flex justify-between py-2 border-b border-gray-100">
+                <span>2026/01/22 和解提案書</span>
+                <span class="text-purple-600">弁護士名義</span>
+              </div>
+              <div class="flex justify-between py-2 border-b border-gray-100">
+                <span>2026/01/10 事実通知書</span>
+                <span class="text-blue-600">事務名義</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- タブ4: 交渉記録 -->
+      <div id="tab-negotiation" class="tab-content hidden">
+        <div class="bg-white rounded-xl shadow-md p-6">
+          <h3 class="text-lg font-bold text-gray-800 mb-4">交渉タイムライン</h3>
+          <div class="relative pl-6 border-l-2 border-purple-200 space-y-4">
+            <div class="relative timeline-item">
+              <div class="flex items-center gap-2 mb-1">
+                <span class="px-2 py-0.5 bg-blue-100 text-blue-700 rounded text-xs">電話</span>
+                <span class="text-sm text-gray-500">2026/01/28 14:30</span>
+              </div>
+              <p class="text-gray-800 text-sm">本人より電話。催告書を受領。分割回数増加を希望。</p>
+            </div>
+            <div class="relative timeline-item">
+              <div class="flex items-center gap-2 mb-1">
+                <span class="px-2 py-0.5 bg-gray-100 text-gray-700 rounded text-xs">内部メモ</span>
+                <span class="text-sm text-gray-500">2026/01/25 10:00</span>
+              </div>
+              <p class="text-gray-800 text-sm">弁護士判断：5回分割まで可。</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- タブ5: 和解管理 -->
+      <div id="tab-settlement" class="tab-content hidden">
+        <div class="bg-white rounded-xl shadow-md p-6">
+          <h3 class="text-lg font-bold text-gray-800 mb-4">和解ステータス</h3>
+          <div class="space-y-3">
+            <div class="flex items-center gap-3 p-4 bg-yellow-50 border-2 border-yellow-300 rounded-lg">
+              <input type="radio" name="settlement" checked class="w-5 h-5">
+              <div>
+                <span class="font-medium text-yellow-800">🟡 交渉中</span>
+                <p class="text-sm text-yellow-700">やり取りあり・和解未成立</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-3 p-4 bg-gray-50 border-2 border-gray-200 rounded-lg">
+              <input type="radio" name="settlement" class="w-5 h-5">
+              <div>
+                <span class="font-medium text-green-700">🟢 和解成立</span>
+                <p class="text-sm text-gray-500">合意あり・WDB連携</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-3 p-4 bg-gray-50 border-2 border-gray-200 rounded-lg">
+              <input type="radio" name="settlement" class="w-5 h-5">
+              <div>
+                <span class="font-medium text-gray-600">⬛ 終了</span>
+                <p class="text-sm text-gray-500">和解不成立・対応終了</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    let currentRole = 'A';
+    let currentSubRole = '';
+    let loginUsername = '';
+
+    // ロール選択
+    function enterRole(role, subRole) {
+      // ユーザー名チェック
+      const usernameInput = document.getElementById('login-username');
+      if (usernameInput && !usernameInput.value.trim()) {
+        alert('ユーザー名を入力してください');
+        usernameInput.focus();
+        return;
+      }
+      loginUsername = usernameInput ? usernameInput.value.trim() : '';
+
+      currentRole = role;
+      currentSubRole = subRole || '';
+      document.getElementById('role-select-screen').classList.add('hidden');
+
+      // 事務担当のサブロール分岐
+      if (role === 'A' && subRole === 'document') {
+        document.getElementById('document-send-screen').classList.remove('hidden');
+      } else if (role === 'A' && subRole === 'register') {
+        document.getElementById('role-a-screen').classList.remove('hidden');
+        // TODO: 登録専用UIに切り替え
+      } else if (role === 'A' && subRole === 'negotiation') {
+        document.getElementById('negotiation-screen').classList.remove('hidden');
+        document.getElementById('nego-login-user').textContent = loginUsername;
+        initNegotiationScreen();
+      } else {
+        document.getElementById('role-' + role.toLowerCase() + '-screen').classList.remove('hidden');
+      }
+    }
+
+    // 送付モーダルを開く
+    function openSendModal(hnId, name) {
+      alert('送付登録：' + name + '（' + hnId + '）\n\n送付書類を選択して送付日を記録します（デモ）');
+    }
+
+    // 書類タイプ別フィルター（回数ベース）
+    let currentDocNum = 1;
+
+    // サンプルデータ（実際はDBから取得）
+    // count = 過去の送付回数、次に送るのは count+1 回目
+    const allData = [
+      // 通知書対象（0回送付済み）
+      { hn: 'HN-000111', name: '佐藤 一郎', address: '東京都渋谷区道玄坂1-2-3', count: 0, lastDoc: null, lastDate: null, days: null },
+      { hn: 'HN-000222', name: '田村 花子', address: '大阪府大阪市北区梅田2-3-4', count: 0, lastDoc: null, lastDate: null, days: null },
+      { hn: 'HN-000666', name: '伊藤 美穂', address: '京都府京都市中京区河原町1-2-3', count: 0, lastDoc: null, lastDate: null, days: null },
+      // 2回目警告書対象（1回送付済み）
+      { hn: 'HN-000333', name: '中村 健太', address: '愛知県名古屋市中区栄3-4-5', count: 1, lastDoc: '通知書', lastDate: '2025/12/01', days: 61 },
+      { hn: 'HN-000444', name: '木村 美咲', address: '福岡県福岡市博多区博多駅前4-5-6', count: 1, lastDoc: '通知書', lastDate: '2025/12/15', days: 47 },
+      { hn: 'HN-000555', name: '渡辺 直樹', address: '北海道札幌市中央区北5条西6-7-8', count: 1, lastDoc: '通知書', lastDate: '2026/01/20', days: 11 },
+      // 3回目警告書対象（2回送付済み）
+      { hn: 'HN-000234', name: '鈴木 次郎', address: '東京都新宿区新宿5-6-7', count: 2, lastDoc: '2回目警告書', lastDate: '2026/01/05', days: 26 },
+      { hn: 'HN-000777', name: '山本 太一', address: '神奈川県横浜市中区本町1-2-3', count: 2, lastDoc: '2回目警告書', lastDate: '2025/12/20', days: 42 },
+      // 4回目警告書対象（3回送付済み）
+      { hn: 'HN-000888', name: '加藤 裕子', address: '埼玉県さいたま市大宮区桜木町1-2-3', count: 3, lastDoc: '3回目警告書', lastDate: '2025/12/10', days: 52 },
+      // 5回目警告書対象（4回送付済み）
+      { hn: 'HN-000999', name: '松本 誠', address: '兵庫県神戸市中央区三宮町1-2-3', count: 4, lastDoc: '4回目警告書', lastDate: '2025/11/20', days: 72 },
+      // 10回目警告書対象（9回送付済み）
+      { hn: 'HN-001010', name: '井上 真理', address: '広島県広島市中区紙屋町1-2-3', count: 9, lastDoc: '9回目警告書', lastDate: '2025/10/15', days: 108 },
+    ];
+
+    function getDocTypeName(num) {
+      if (num === 1) return '通知書';
+      return num + '回目警告書';
+    }
+
+    function filterByDocType(num) {
+      currentDocNum = num;
+
+      // ボタンのスタイル更新（1〜3はボタン、4以降はドロップダウン）
+      document.querySelectorAll('.doc-type-btn').forEach(btn => {
+        btn.classList.remove('border-blue-500', 'bg-blue-50', 'border-orange-500', 'bg-orange-50', 'border-red-500', 'bg-red-50', 'border-purple-500', 'bg-purple-50');
+        btn.classList.add('border-gray-200', 'bg-gray-50');
+      });
+
+      if (num <= 3) {
+        const selectedBtn = document.getElementById('btn-' + num);
+        const colors = { 1: 'blue', 2: 'orange', 3: 'red' };
+        selectedBtn.classList.remove('border-gray-200', 'bg-gray-50');
+        selectedBtn.classList.add('border-' + colors[num] + '-500', 'bg-' + colors[num] + '-50');
+        // ドロップダウンをリセット
+        document.getElementById('dropdown-warning').value = '4';
+      } else {
+        // 4以降はドロップダウンの値を設定
+        document.getElementById('dropdown-warning').value = num;
+      }
+
+      // ヘッダー更新
+      document.getElementById('selected-doc-type').textContent = getDocTypeName(num);
+
+      // データをフィルター（count = num - 1 の人が対象）
+      const filteredData = allData.filter(row => row.count === num - 1);
+      renderTable(filteredData);
+    }
+
+    function renderTable(data) {
+      const tbody = document.getElementById('doc-table-body');
+      const totalCount = document.getElementById('total-count');
+
+      if (data.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="px-4 py-8 text-center text-gray-500">対象者がいません</td></tr>';
+        totalCount.textContent = '0';
+        updateSelectedCount();
+        return;
+      }
+
+      // 経過日数でソート（nullは先頭、それ以外は降順）
+      data.sort((a, b) => {
+        if (a.days === null && b.days === null) return 0;
+        if (a.days === null) return -1;
+        if (b.days === null) return -1;
+        return b.days - a.days;
+      });
+
+      let html = '';
+      data.forEach(row => {
+        const bgClass = row.days === null ? 'bg-red-50 hover:bg-red-100' :
+                        row.days >= 40 ? 'hover:bg-orange-50' :
+                        row.days >= 20 ? 'hover:bg-yellow-50' : 'hover:bg-gray-50';
+
+        const daysDisplay = row.days === null ?
+          '<span class="px-3 py-1 bg-red-600 text-white rounded-full text-sm font-bold">未送付</span>' :
+          row.days >= 40 ? '<span class="px-3 py-1 bg-orange-500 text-white rounded-full text-sm font-bold">' + row.days + '日</span>' :
+          row.days >= 20 ? '<span class="px-3 py-1 bg-yellow-500 text-white rounded-full text-sm font-bold">' + row.days + '日</span>' :
+          '<span class="px-3 py-1 bg-gray-400 text-white rounded-full text-sm font-bold">' + row.days + '日</span>';
+
+        const countBadgeColor = row.count === 0 ? 'gray' : row.count === 1 ? 'blue' : row.count === 2 ? 'purple' : 'red';
+
+        html += `
+          <tr class="${bgClass}" data-hn="${row.hn}">
+            <td class="px-3 py-3 text-center">
+              <input type="checkbox" class="row-checkbox w-5 h-5 rounded" data-hn="${row.hn}" data-name="${row.name}" data-address="${row.address}" onchange="updateSelectedCount()">
+            </td>
+            <td class="px-4 py-3">
+              <p class="font-bold text-gray-800">${row.name}</p>
+              <p class="text-xs text-gray-500">${row.hn}</p>
+            </td>
+            <td class="px-4 py-3 text-sm text-gray-600">${row.address}</td>
+            <td class="px-4 py-3 text-center">
+              <span class="px-2 py-1 bg-${countBadgeColor}-200 rounded text-sm font-bold">${row.count}回</span>
+            </td>
+            <td class="px-4 py-3 text-sm">
+              ${row.lastDoc ? `<p class="text-gray-800">${row.lastDoc}</p><p class="text-xs text-gray-500">${row.lastDate}</p>` : '<span class="text-gray-400">－</span>'}
+            </td>
+            <td class="px-4 py-3 text-center">${daysDisplay}</td>
+          </tr>
+        `;
+      });
+
+      tbody.innerHTML = html;
+      totalCount.textContent = data.length;
+      document.getElementById('select-all').checked = false;
+      updateSelectedCount();
+    }
+
+    // 全選択トグル
+    function toggleSelectAll() {
+      const selectAll = document.getElementById('select-all');
+      const checkboxes = document.querySelectorAll('.row-checkbox');
+      checkboxes.forEach(cb => cb.checked = selectAll.checked);
+      updateSelectedCount();
+    }
+
+    // 選択件数更新
+    function updateSelectedCount() {
+      const checked = document.querySelectorAll('.row-checkbox:checked').length;
+      document.getElementById('selected-count').textContent = checked;
+      const btn = document.getElementById('btn-mark-sent');
+      btn.disabled = checked === 0;
+    }
+
+    // CSV出力
+    function exportCSV() {
+      const checkboxes = document.querySelectorAll('.row-checkbox:checked');
+      if (checkboxes.length === 0) {
+        alert('CSVに出力する対象を選択してください');
+        return;
+      }
+
+      const docTypeName = getDocTypeName(currentDocNum);
+      let csv = '発信者ID,氏名,住所,送付書類\n';
+      checkboxes.forEach(cb => {
+        const hn = cb.dataset.hn;
+        const name = cb.dataset.name;
+        const address = cb.dataset.address;
+        csv += `"${hn}","${name}","${address}","${docTypeName}"\n`;
+      });
+
+      // CSVダウンロード
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+      a.download = `webletter_${docTypeName}_${today}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+
+      alert(checkboxes.length + '件のCSVを出力しました。\nWebレターで送付してください。');
+    }
+
+    // 送付済みにする
+    function markAsSent() {
+      const checkboxes = document.querySelectorAll('.row-checkbox:checked');
+      if (checkboxes.length === 0) {
+        alert('送付済みにする対象を選択してください');
+        return;
+      }
+
+      const names = [];
+      checkboxes.forEach(cb => names.push(cb.dataset.name));
+
+      if (confirm(checkboxes.length + '件を送付済みにしますか？\n\n' + names.join('\n'))) {
+        // 実際はDBに送付記録を登録
+        checkboxes.forEach(cb => {
+          const row = cb.closest('tr');
+          row.classList.add('opacity-50', 'line-through');
+          cb.disabled = true;
+        });
+        alert(checkboxes.length + '件を送付済みにしました。\n（デモ：実際はDBに記録されます）');
+        updateSelectedCount();
+      }
+    }
+
+    // ========================================
+    // 統一データ構造
+    // ========================================
+    let currentNegoPerson = null;
+    let negoTimeline = [];
+
+    // 発信者マスターデータ（すべての情報を一元管理）
+    const personData = {
+      'HN-000456': {
+        hn: 'HN-000456',
+        name: '山田 太郎',
+        phone: '090-1234-5678',
+        address: '東京都新宿区西新宿1-1-1',
+        hasLawyer: false,
+        lawyerName: null,
+        settlement: '交渉中',
+        amount: 150000,
+        docStatus: '2回目警告書',
+        lastContact: '2026/01/28',
+        // 紐付けIPN一覧
+        linkedIpns: ['IPN-003'],
+        // 交渉記録
+        negoHistory: [
+          { type: 'phone', datetime: '2026/01/28 14:30', content: '本人より電話。催告書を受領。分割回数増加を希望。', user: '佐藤' },
+          { type: 'email', datetime: '2026/01/25 10:00', content: '分割払いの条件について問い合わせメールあり。', user: '田中' },
+          { type: 'phone', datetime: '2026/01/20 16:00', content: '初回連絡。和解の意思あり。', user: '佐藤' },
+        ],
+        // 書類送付履歴
+        docHistory: [
+          { type: '通知書', date: '2026/01/05', user: '田中' },
+          { type: '1回目警告書', date: '2026/01/15', user: '佐藤' },
+          { type: '2回目警告書', date: '2026/01/25', user: '田中' },
+        ]
+      },
+      'HN-000457': {
+        hn: 'HN-000457',
+        name: '山田 花子',
+        phone: '090-1234-9999',
+        address: '東京都渋谷区渋谷2-2-2',
+        hasLawyer: false,
+        lawyerName: null,
+        settlement: '未着手',
+        amount: 80000,
+        docStatus: '通知書',
+        lastContact: '2026/01/20',
+        linkedIpns: [],
+        negoHistory: [],
+        docHistory: [
+          { type: '通知書', date: '2026/01/20', user: '鈴木' },
+        ]
+      },
+      'HN-000458': {
+        hn: 'HN-000458',
+        name: '山田 一郎',
+        phone: '090-5555-1234',
+        address: '東京都品川区大崎3-3-3',
+        hasLawyer: true,
+        lawyerName: '佐藤弁護士（佐藤法律事務所）',
+        settlement: '和解成立',
+        amount: 200000,
+        docStatus: '3回目警告書',
+        lastContact: '2026/01/25',
+        linkedIpns: [],
+        negoHistory: [
+          { type: 'phone', datetime: '2026/01/25 10:00', content: '弁護士より連絡。和解条件について協議。', user: '田中' },
+        ],
+        docHistory: [
+          { type: '通知書', date: '2026/01/10', user: '田中' },
+          { type: '1回目警告書', date: '2026/01/18', user: '佐藤' },
+        ]
+      },
+      'HN-000234': {
+        hn: 'HN-000234',
+        name: '鈴木 次郎',
+        phone: '080-9876-5432',
+        address: '神奈川県横浜市中区4-4-4',
+        hasLawyer: false,
+        lawyerName: null,
+        settlement: '交渉中',
+        amount: 120000,
+        docStatus: '1回目警告書',
+        lastContact: '2026/01/15',
+        linkedIpns: ['IPN-006'],
+        negoHistory: [
+          { type: 'phone', datetime: '2026/01/15 11:00', content: '電話あり。支払い能力について相談。', user: '鈴木' },
+        ],
+        docHistory: [
+          { type: '通知書', date: '2026/01/08', user: '佐藤' },
+          { type: '1回目警告書', date: '2026/01/15', user: '田中' },
+        ]
+      },
+      'HN-000235': {
+        hn: 'HN-000235',
+        name: '鈴木 美咲',
+        phone: '080-9876-1111',
+        address: '神奈川県川崎市幸区5-5-5',
+        hasLawyer: false,
+        lawyerName: null,
+        settlement: '未着手',
+        amount: 50000,
+        docStatus: '未送付',
+        lastContact: '-',
+        linkedIpns: [],
+        negoHistory: [],
+        docHistory: []
+      },
+      'HN-000345': {
+        hn: 'HN-000345',
+        name: '高橋 三郎',
+        phone: '070-1111-2222',
+        address: '千葉県千葉市中央区6-6-6',
+        hasLawyer: true,
+        lawyerName: '田中弁護士（田中法律事務所）',
+        settlement: '終了',
+        amount: 300000,
+        docStatus: '4回目警告書',
+        lastContact: '2026/01/10',
+        linkedIpns: [],
+        negoHistory: [
+          { type: 'other', datetime: '2026/01/10 15:00', content: '和解書受領。入金確認済み。', user: '佐藤' },
+        ],
+        docHistory: [
+          { type: '通知書', date: '2025/12/01', user: '田中' },
+          { type: '1回目警告書', date: '2025/12/15', user: '佐藤' },
+          { type: '2回目警告書', date: '2025/12/28', user: '田中' },
+          { type: '3回目警告書', date: '2026/01/05', user: '鈴木' },
+        ]
+      },
+    };
+
+    // 弁護士マスター（管理者のみ登録可、コードは不変）
+    const lawyerMaster = {
+      'TN': { code: 'TN', name: '田中 一郎', office: '田中法律事務所', phone: '03-1234-5678' },
+      'ST': { code: 'ST', name: '佐藤 花子', office: '佐藤法律事務所', phone: '03-2345-6789' },
+      'YM': { code: 'YM', name: '山本 太郎', office: '山本・鈴木法律事務所', phone: '03-3456-7890' },
+      'SK': { code: 'SK', name: '鈴木 次郎', office: '鈴木総合法律事務所', phone: '06-1111-2222' },
+      'WD': { code: 'WD', name: '渡辺 三郎', office: '渡辺法律事務所', phone: '052-333-4444' },
+    };
+
+    // 弁護士コードから情報を取得
+    function getLawyerByCode(code) {
+      if (!code) return null;
+      return lawyerMaster[code.toUpperCase()] || null;
+    }
+
+    // 弁護士のフル表示名を取得
+    function getLawyerDisplayName(code) {
+      const lawyer = getLawyerByCode(code);
+      if (!lawyer) return null;
+      return `${lawyer.name}（${lawyer.office}）`;
+    }
+
+    // IPNデータ（別DB想定だが参照用）
+    const ipnData = [
+      { id: 'IPN-001', ip: '192.168.1.100', port: 51413, datetime: '2026/01/25 14:32:15', provider: 'NTT', holder: 'A社', title: '映画タイトルA', linked: false, linkedTo: null },
+      { id: 'IPN-002', ip: '192.168.1.100', port: 51413, datetime: '2026/01/20 09:15:42', provider: 'NTT', holder: 'A社', title: '映画タイトルB', linked: false, linkedTo: null },
+      { id: 'IPN-003', ip: '10.0.0.50', port: 6881, datetime: '2026/01/22 18:45:33', provider: 'KDDI', holder: 'B社', title: 'ゲームソフトX', linked: true, linkedTo: 'HN-000456' },
+      { id: 'IPN-004', ip: '172.16.0.25', port: 51413, datetime: '2026/01/18 22:10:05', provider: 'SoftBank', holder: 'A社', title: '映画タイトルC', linked: false, linkedTo: null },
+      { id: 'IPN-005', ip: '192.168.2.200', port: 8999, datetime: '2026/01/15 11:25:18', provider: 'So-net', holder: 'C社', title: '音楽アルバムY', linked: false, linkedTo: null },
+      { id: 'IPN-006', ip: '10.0.0.50', port: 6881, datetime: '2026/01/28 16:05:22', provider: 'KDDI', holder: 'B社', title: 'ゲームソフトZ', linked: true, linkedTo: 'HN-000234' },
+      { id: 'IPN-007', ip: '192.168.1.100', port: 51413, datetime: '2026/01/30 08:45:10', provider: 'NTT', holder: 'C社', title: 'アニメ作品W', linked: false, linkedTo: null },
+    ];
+
+    // IPNデータをIDで取得するヘルパー
+    function getIpnById(ipnId) {
+      return ipnData.find(d => d.id === ipnId);
+    }
+
+    // 発信者に紐付いたIPNを取得
+    function getLinkedIpns(hn) {
+      const person = personData[hn];
+      if (!person || !person.linkedIpns) return [];
+      return person.linkedIpns.map(id => getIpnById(id)).filter(Boolean);
+    }
+
+    function initNegotiationScreen() {
+      // 検索結果を非表示
+      document.getElementById('nego-result').classList.add('hidden');
+      document.getElementById('nego-search-results').classList.add('hidden');
+      document.getElementById('search-name-nego').value = '';
+      // 日時を現在に設定
+      const now = new Date();
+      const datetime = now.toISOString().slice(0, 16);
+      if (document.getElementById('nego-datetime')) {
+        document.getElementById('nego-datetime').value = datetime;
+      }
+    }
+
+    function searchForNegotiation() {
+      const searchQuery = document.getElementById('search-name-nego').value.trim();
+      if (!searchQuery) {
+        alert('検索キーワードを入力してください');
+        return;
+      }
+
+      // 検索クエリを正規化（ハイフンや空白を除去して比較用）
+      const normalizedQuery = searchQuery.replace(/[-\s]/g, '').toLowerCase();
+
+      // 簡易検索（ID、名前、電話番号で部分一致）- 複数件対応
+      const results = [];
+      for (const key in personData) {
+        const person = personData[key];
+        const normalizedHn = person.hn.replace(/[-\s]/g, '').toLowerCase();
+        const normalizedName = person.name.replace(/[-\s]/g, '').toLowerCase();
+        const normalizedPhone = person.phone.replace(/[-\s]/g, '').toLowerCase();
+
+        // ID、名前、電話番号のいずれかでマッチ
+        if (normalizedHn.includes(normalizedQuery) || normalizedQuery.includes(normalizedHn) ||
+            normalizedName.includes(normalizedQuery) || normalizedQuery.includes(normalizedName) ||
+            normalizedPhone.includes(normalizedQuery) || normalizedQuery.includes(normalizedPhone)) {
+          results.push(personData[key]);
+        }
+      }
+
+      // 検索結果リストを非表示にリセット
+      document.getElementById('nego-search-results').classList.add('hidden');
+      document.getElementById('nego-result').classList.add('hidden');
+
+      if (results.length === 0) {
+        alert('該当する発信者が見つかりませんでした');
+        return;
+      } else if (results.length === 1) {
+        // 1件のみ：直接表示
+        selectPerson(results[0]);
+      } else {
+        // 複数件：リスト表示
+        showSearchResults(results);
+      }
+    }
+
+    // 検索結果リストを表示
+    function showSearchResults(results) {
+      const listEl = document.getElementById('search-result-list');
+      document.getElementById('search-result-count').textContent = `（${results.length}件）`;
+
+      let html = '';
+      results.forEach(person => {
+        const lawyerBadge = person.hasLawyer
+          ? `<span class="px-2 py-1 bg-red-100 text-red-700 text-xs rounded">弁護士あり</span>`
+          : `<span class="px-2 py-1 bg-green-100 text-green-700 text-xs rounded">本人対応</span>`;
+
+        html += `
+          <div onclick="selectPersonById('${person.hn}')"
+               class="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-blue-50 hover:border-blue-300 cursor-pointer transition-colors">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
+                <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                </svg>
+              </div>
+              <div>
+                <p class="font-bold text-gray-800">${person.name}</p>
+                <p class="text-sm text-gray-500">${person.hn} ｜ ${person.phone}</p>
+              </div>
+            </div>
+            ${lawyerBadge}
+          </div>
+        `;
+      });
+
+      listEl.innerHTML = html;
+      document.getElementById('nego-search-results').classList.remove('hidden');
+    }
+
+    // IDで選択
+    function selectPersonById(hn) {
+      const person = personData[hn];
+      if (person) {
+        selectPerson(person);
+      }
+    }
+
+    // 対象者を選択して詳細表示
+    function selectPerson(person) {
+      currentNegoPerson = person;
+
+      // 検索結果リストを非表示
+      document.getElementById('nego-search-results').classList.add('hidden');
+
+      // 表示更新
+      document.getElementById('nego-person-name').textContent = person.name;
+      document.getElementById('nego-person-id').textContent = person.hn;
+      document.getElementById('nego-person-phone').textContent = person.phone || '-';
+
+      const lawyerStatus = document.getElementById('nego-lawyer-status');
+      if (person.hasLawyer) {
+        lawyerStatus.textContent = '⚠ 弁護士あり: ' + (person.lawyerName || '');
+        lawyerStatus.className = 'px-4 py-2 bg-red-100 text-red-800 rounded-lg font-bold';
+      } else {
+        lawyerStatus.textContent = '本人対応';
+        lawyerStatus.className = 'px-4 py-2 bg-green-100 text-green-800 rounded-lg font-bold';
+      }
+
+      // 基本情報サマリー表示
+      document.getElementById('nego-summary-settlement').textContent = person.settlement || '-';
+      document.getElementById('nego-summary-amount').textContent = person.amount ? '¥' + person.amount.toLocaleString() : '-';
+      document.getElementById('nego-summary-docs').textContent = person.docStatus || '-';
+
+      // 最終連絡日から経過日数を計算
+      if (person.lastContact && person.lastContact !== '-') {
+        const lastDate = new Date(person.lastContact);
+        const today = new Date();
+        const diffDays = Math.floor((today - lastDate) / (1000 * 60 * 60 * 24));
+        document.getElementById('nego-summary-lastcontact').textContent = diffDays + '日前';
+      } else {
+        document.getElementById('nego-summary-lastcontact').textContent = '-';
+      }
+
+      // タイムライン表示（統一データから取得）
+      negoTimeline = person.negoHistory || [];
+      renderNegoTimeline();
+
+      // 日時を現在に設定
+      const now = new Date();
+      document.getElementById('nego-datetime').value = now.toISOString().slice(0, 16);
+      document.getElementById('nego-content').value = '';
+
+      // 結果表示
+      document.getElementById('nego-result').classList.remove('hidden');
+    }
+
+    // 詳細画面を開く（ロールAのメイン画面に遷移）
+    function openPersonDetail() {
+      if (!currentNegoPerson) return;
+
+      // メインのロールA画面に遷移し、該当者を表示
+      document.getElementById('negotiation-screen').classList.add('hidden');
+      document.getElementById('roleA-main').classList.remove('hidden');
+
+      // ロールAのメイン画面で該当者を名前検索
+      const searchInput = document.getElementById('search-name-a');
+      if (searchInput) {
+        searchInput.value = currentNegoPerson.name;
+        searchByName('A');
+      }
+    }
+
+    function renderNegoTimeline() {
+      const container = document.getElementById('nego-timeline');
+
+      if (negoTimeline.length === 0) {
+        container.innerHTML = '<p class="text-gray-400 py-4">まだ交渉記録がありません</p>';
+        return;
+      }
+
+      const typeIcons = {
+        phone: { icon: '📞', label: '電話', color: 'blue' },
+        email: { icon: '📧', label: 'メール', color: 'green' },
+        other: { icon: '📋', label: 'その他', color: 'gray' }
+      };
+
+      let html = '';
+      negoTimeline.forEach(record => {
+        const t = typeIcons[record.type] || typeIcons.other;
+        html += `
+          <div class="relative pl-2">
+            <div class="absolute -left-8 top-1 w-4 h-4 bg-${t.color}-500 rounded-full"></div>
+            <div class="flex items-center gap-2 mb-1">
+              <span class="px-2 py-0.5 bg-${t.color}-100 text-${t.color}-700 rounded text-xs font-bold">${t.icon} ${t.label}</span>
+              <span class="text-sm text-gray-500">${record.datetime}</span>
+              <span class="px-2 py-0.5 bg-purple-100 text-purple-700 rounded text-xs">記録: ${record.user || '-'}</span>
+            </div>
+            <p class="text-gray-800 text-sm">${record.content}</p>
+          </div>
+        `;
+      });
+
+      container.innerHTML = html;
+    }
+
+    function addNegotiationRecord() {
+      const type = document.getElementById('nego-type').value;
+      const datetime = document.getElementById('nego-datetime').value;
+      const content = document.getElementById('nego-content').value.trim();
+
+      if (!content) {
+        alert('内容を入力してください');
+        return;
+      }
+
+      // 日時フォーマット
+      const dt = new Date(datetime);
+      const formatted = dt.toLocaleString('ja-JP', {
+        year: 'numeric', month: '2-digit', day: '2-digit',
+        hour: '2-digit', minute: '2-digit'
+      }).replace(/\//g, '/');
+
+      // 新しい記録オブジェクト
+      const newRecord = {
+        type: type,
+        datetime: formatted,
+        content: content,
+        user: loginUsername
+      };
+
+      // ローカル表示用に追加
+      negoTimeline.unshift(newRecord);
+
+      // personDataにも保存（統一データ）
+      if (currentNegoPerson && personData[currentNegoPerson.hn]) {
+        if (!personData[currentNegoPerson.hn].negoHistory) {
+          personData[currentNegoPerson.hn].negoHistory = [];
+        }
+        personData[currentNegoPerson.hn].negoHistory.unshift(newRecord);
+
+        // 最終連絡日も更新
+        personData[currentNegoPerson.hn].lastContact = formatted.split(' ')[0];
+      }
+
+      // 再描画
+      renderNegoTimeline();
+
+      // フォームクリア
+      document.getElementById('nego-content').value = '';
+      const now = new Date();
+      document.getElementById('nego-datetime').value = now.toISOString().slice(0, 16);
+
+      alert('交渉記録を追加しました（デモ：実際はDBに保存されます）');
+    }
+
+    // 初期表示
+    document.addEventListener('DOMContentLoaded', function() {
+      if (document.getElementById('doc-table-body')) {
+        filterByDocType(1);
+      }
+      // 和解ステータス表示
+      if (document.getElementById('settlement-status-cards')) {
+        renderSettlementStatus();
+      }
+    });
+
+    // 和解ステータス一覧
+    const settlementConfig = {
+      '未着手': { color: 'gray', icon: '⏳' },
+      '交渉中': { color: 'blue', icon: '💬' },
+      '和解成立': { color: 'green', icon: '🤝' },
+      '訴訟中': { color: 'red', icon: '⚖️' },
+      '終了': { color: 'purple', icon: '✅' }
+    };
+
+    function renderSettlementStatus() {
+      const container = document.getElementById('settlement-status-cards');
+      if (!container) return;
+
+      // ステータス別にカウント
+      const counts = {};
+      Object.keys(settlementConfig).forEach(s => counts[s] = 0);
+
+      Object.values(personData).forEach(person => {
+        const status = person.settlement || '未着手';
+        if (counts[status] !== undefined) {
+          counts[status]++;
+        }
+      });
+
+      let html = '';
+      Object.keys(settlementConfig).forEach(status => {
+        const config = settlementConfig[status];
+        const count = counts[status];
+        const bgColor = count > 0 ? `bg-${config.color}-50 border-${config.color}-200` : 'bg-gray-50 border-gray-200';
+        const textColor = count > 0 ? `text-${config.color}-700` : 'text-gray-400';
+
+        html += `
+          <div onclick="showSettlementList('${status}')"
+               class="border-2 ${bgColor} rounded-lg p-3 cursor-pointer hover:shadow-md transition-shadow">
+            <div class="flex items-center justify-between">
+              <span class="text-lg">${config.icon}</span>
+              <span class="text-2xl font-bold ${textColor}">${count}</span>
+            </div>
+            <p class="text-sm ${textColor} mt-1">${status}</p>
+          </div>
+        `;
+      });
+
+      container.innerHTML = html;
+    }
+
+    function showSettlementList(status) {
+      const persons = Object.values(personData).filter(p => p.settlement === status);
+
+      document.getElementById('settlement-list-title').textContent = status;
+      document.getElementById('settlement-list-count').textContent = `（${persons.length}件）`;
+
+      const body = document.getElementById('settlement-list-body');
+
+      if (persons.length === 0) {
+        body.innerHTML = '<p class="text-gray-400 py-4 text-center">該当なし</p>';
+      } else {
+        let html = '';
+        persons.forEach(person => {
+          const lawyerBadge = person.hasLawyer
+            ? '<span class="px-2 py-0.5 bg-red-100 text-red-600 text-xs rounded">弁護士あり</span>'
+            : '';
+          const ipnCount = person.linkedIpns ? person.linkedIpns.length : 0;
+
+          // 最終連絡からの経過日数
+          let daysSince = '-';
+          if (person.lastContact && person.lastContact !== '-') {
+            const lastDate = new Date(person.lastContact);
+            const today = new Date();
+            const diff = Math.floor((today - lastDate) / (1000 * 60 * 60 * 24));
+            daysSince = diff + '日前';
+          }
+
+          html += `
+            <div class="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50">
+              <div class="flex-1">
+                <div class="flex items-center gap-2">
+                  <p class="font-bold text-gray-800">${person.name}</p>
+                  ${lawyerBadge}
+                </div>
+                <p class="text-xs text-gray-500">${person.hn} | ${person.phone}</p>
+                <p class="text-xs text-gray-400 mt-1">IPN: ${ipnCount}件 | 最終連絡: ${daysSince}</p>
+              </div>
+              <div class="text-right">
+                <p class="text-sm font-bold text-gray-700">¥${(person.amount || 0).toLocaleString()}</p>
+                <p class="text-xs text-gray-500">${person.docStatus || '-'}</p>
+              </div>
+            </div>
+          `;
+        });
+        body.innerHTML = html;
+      }
+
+      document.getElementById('settlement-list-section').classList.remove('hidden');
+    }
+
+    function closeSettlementList() {
+      document.getElementById('settlement-list-section').classList.add('hidden');
+    }
+
+    // ロール選択に戻る
+    function backToRoleSelect() {
+      document.querySelectorAll('[id$="-screen"]').forEach(el => el.classList.add('hidden'));
+      document.getElementById('role-select-screen').classList.remove('hidden');
+    }
+
+    // 検索から戻る
+    function backToSearch() {
+      document.getElementById('person-detail-screen').classList.add('hidden');
+      document.getElementById('role-' + currentRole.toLowerCase() + '-screen').classList.remove('hidden');
+    }
+
+    // ========================================
+    // IPN紐付け機能
+    // ========================================
+    let selectedIpn = null;
+    let selectedLinkPerson = null;
+
+    function openIpnLinkScreen() {
+      document.getElementById('roleA-main').classList.add('hidden');
+      document.getElementById('ipn-link-screen').classList.remove('hidden');
+      // 初期表示
+      renderIpnTable(ipnData);
+    }
+
+    function closeIpnLinkScreen() {
+      document.getElementById('ipn-link-screen').classList.add('hidden');
+      document.getElementById('roleA-main').classList.remove('hidden');
+    }
+
+    function searchIpnData() {
+      const ip = document.getElementById('ipn-search-ip').value.trim();
+      const holder = document.getElementById('ipn-search-holder').value;
+      const provider = document.getElementById('ipn-search-provider').value;
+
+      let results = ipnData.filter(item => {
+        if (ip && !item.ip.includes(ip)) return false;
+        if (holder && item.holder !== holder) return false;
+        if (provider && item.provider !== provider) return false;
+        return true;
+      });
+
+      renderIpnTable(results);
+    }
+
+    function clearIpnSearch() {
+      document.getElementById('ipn-search-ip').value = '';
+      document.getElementById('ipn-search-holder').value = '';
+      document.getElementById('ipn-search-provider').value = '';
+      renderIpnTable(ipnData);
+    }
+
+    function renderIpnTable(data) {
+      const tbody = document.getElementById('ipn-table-body');
+      const noResults = document.getElementById('ipn-no-results');
+
+      if (data.length === 0) {
+        tbody.innerHTML = '';
+        noResults.classList.remove('hidden');
+        noResults.textContent = '該当するIPNデータがありません';
+        document.getElementById('ipn-result-count').textContent = '';
+        return;
+      }
+
+      noResults.classList.add('hidden');
+      document.getElementById('ipn-result-count').textContent = `（${data.length}件）`;
+
+      // 紐付け済み・未紐付けカウント
+      const linkedCount = data.filter(d => d.linked).length;
+      document.getElementById('ipn-linked-count').textContent = linkedCount;
+      document.getElementById('ipn-unlinked-count').textContent = data.length - linkedCount;
+
+      // 同一IPでグループ化
+      const ipGroups = {};
+      data.forEach(item => {
+        if (!ipGroups[item.ip]) {
+          ipGroups[item.ip] = [];
+        }
+        ipGroups[item.ip].push(item);
+      });
+
+      let html = '';
+
+      // IPグループごとに表示
+      Object.keys(ipGroups).forEach(ip => {
+        const group = ipGroups[ip];
+        const unlinkedInGroup = group.filter(i => !i.linked);
+        const linkedInGroup = group.filter(i => i.linked);
+
+        // 同一IPで紐付け済みがあれば、その発信者を候補として表示
+        let linkedPersonInfo = '';
+        if (linkedInGroup.length > 0) {
+          const linkedHn = linkedInGroup[0].linkedTo;
+          const linkedPerson = personData[linkedHn];
+          if (linkedPerson) {
+            linkedPersonInfo = `<span class="text-green-600 text-xs">（${linkedPerson.name}に${linkedInGroup.length}件紐付済）</span>`;
+          }
+        }
+
+        // グループヘッダー（同一IPに複数ある場合）
+        if (group.length > 1) {
+          const unlinkedCount = unlinkedInGroup.length;
+          html += `
+            <tr class="bg-blue-50 border-t-2 border-blue-300">
+              <td colspan="7" class="px-4 py-2">
+                <div class="flex items-center gap-3">
+                  <span class="font-mono font-bold text-blue-700">${ip}</span>
+                  <span class="text-sm text-gray-600">（${group.length}件）</span>
+                  ${linkedPersonInfo}
+                </div>
+              </td>
+              <td class="px-4 py-2 text-center">
+                ${unlinkedCount > 1 ? `<button onclick="openBulkIpnLinkModal('${ip}')" class="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded text-sm">まとめて紐付け（${unlinkedCount}件）</button>` : ''}
+              </td>
+            </tr>
+          `;
+        }
+
+        // 各IPN行
+        group.forEach(item => {
+          const statusBadge = item.linked
+            ? `<span class="px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full">紐付済</span>`
+            : `<span class="px-2 py-1 bg-orange-100 text-orange-700 text-xs rounded-full">未紐付</span>`;
+
+          const linkedInfo = item.linked ? `<span class="text-xs text-gray-400 block">${item.linkedTo}</span>` : '';
+
+          const actionBtn = item.linked
+            ? `<button class="px-3 py-1 bg-gray-200 text-gray-500 rounded text-sm cursor-not-allowed" disabled>紐付済</button>`
+            : `<button onclick="openIpnLinkModal('${item.id}')" class="px-3 py-1 bg-orange-500 hover:bg-orange-600 text-white rounded text-sm">紐付け</button>`;
+
+          html += `
+            <tr class="hover:bg-gray-50 ${item.linked ? 'bg-green-50/30' : ''}">
+              <td class="px-4 py-3">${statusBadge}${linkedInfo}</td>
+              <td class="px-4 py-3 font-mono text-sm">${item.ip}</td>
+              <td class="px-4 py-3 font-mono text-sm">${item.port}</td>
+              <td class="px-4 py-3 text-sm">${item.datetime}</td>
+              <td class="px-4 py-3 text-sm">${item.provider}</td>
+              <td class="px-4 py-3 text-sm">${item.holder}</td>
+              <td class="px-4 py-3 text-sm font-medium">${item.title}</td>
+              <td class="px-4 py-3 text-center">${actionBtn}</td>
+            </tr>
+          `;
+        });
+      });
+
+      tbody.innerHTML = html;
+    }
+
+    // まとめて紐付けモーダル
+    let bulkIpnIds = [];
+
+    function openBulkIpnLinkModal(ip) {
+      // 同一IPの未紐付けIPNを取得
+      bulkIpnIds = ipnData.filter(d => d.ip === ip && !d.linked).map(d => d.id);
+      if (bulkIpnIds.length === 0) return;
+
+      selectedLinkPerson = null;
+
+      // 同一IPで既に紐付け済みの発信者がいれば候補として表示
+      const linkedSameIp = ipnData.find(d => d.ip === ip && d.linked);
+      let suggestedPerson = null;
+      if (linkedSameIp && linkedSameIp.linkedTo) {
+        suggestedPerson = personData[linkedSameIp.linkedTo];
+      }
+
+      // モーダル情報更新
+      const ipnList = bulkIpnIds.map(id => {
+        const ipn = ipnData.find(d => d.id === id);
+        return `${ipn.datetime} - ${ipn.title}`;
+      }).join('<br>');
+
+      document.getElementById('modal-ipn-info').innerHTML = `
+        <span class="text-orange-600 font-bold">${ip}</span>（${bulkIpnIds.length}件）<br>
+        <div class="text-sm text-gray-600 mt-2 max-h-24 overflow-y-auto">${ipnList}</div>
+      `;
+
+      // リセット
+      document.getElementById('ipn-link-search').value = '';
+      document.getElementById('ipn-link-person-list').innerHTML = '';
+      document.getElementById('ipn-selected-person').classList.add('hidden');
+      document.getElementById('ipn-link-confirm-btn').disabled = true;
+
+      // 候補がいれば自動で表示
+      if (suggestedPerson) {
+        document.getElementById('ipn-link-person-list').innerHTML = `
+          <div class="bg-green-50 border-2 border-green-300 rounded-lg p-3 mb-2">
+            <p class="text-xs text-green-600 mb-1">💡 同一IPで紐付け済みの発信者</p>
+            <div onclick="selectPersonForIpn('${suggestedPerson.hn}')"
+                 class="flex items-center justify-between p-2 bg-white rounded cursor-pointer hover:bg-green-100">
+              <div>
+                <p class="font-bold text-gray-800">${suggestedPerson.name}</p>
+                <p class="text-xs text-gray-500">${suggestedPerson.hn} | ${suggestedPerson.phone}</p>
+              </div>
+              <span class="text-green-600 text-sm">選択 →</span>
+            </div>
+          </div>
+        `;
+      }
+
+      document.getElementById('ipn-link-modal').classList.remove('hidden');
+    }
+
+    function openIpnLinkModal(ipnId) {
+      selectedIpn = ipnData.find(d => d.id === ipnId);
+      selectedLinkPerson = null;
+      bulkIpnIds = []; // 単体モード
+
+      if (!selectedIpn) return;
+
+      // 同一IPで既に紐付け済みの発信者がいれば候補として表示
+      const linkedSameIp = ipnData.find(d => d.ip === selectedIpn.ip && d.linked && d.id !== ipnId);
+      let suggestedPerson = null;
+      if (linkedSameIp && linkedSameIp.linkedTo) {
+        suggestedPerson = personData[linkedSameIp.linkedTo];
+      }
+
+      // モーダル情報更新
+      document.getElementById('modal-ipn-info').innerHTML = `
+        <span class="text-orange-600">${selectedIpn.ip}:${selectedIpn.port}</span><br>
+        <span class="text-sm text-gray-600">${selectedIpn.datetime} | ${selectedIpn.provider} | ${selectedIpn.holder} | ${selectedIpn.title}</span>
+      `;
+
+      // リセット
+      document.getElementById('ipn-link-search').value = '';
+      document.getElementById('ipn-selected-person').classList.add('hidden');
+      document.getElementById('ipn-link-confirm-btn').disabled = true;
+
+      // 候補がいれば自動で表示
+      if (suggestedPerson) {
+        document.getElementById('ipn-link-person-list').innerHTML = `
+          <div class="bg-green-50 border-2 border-green-300 rounded-lg p-3 mb-2">
+            <p class="text-xs text-green-600 mb-1">💡 同一IPで紐付け済みの発信者</p>
+            <div onclick="selectPersonForIpn('${suggestedPerson.hn}')"
+                 class="flex items-center justify-between p-2 bg-white rounded cursor-pointer hover:bg-green-100">
+              <div>
+                <p class="font-bold text-gray-800">${suggestedPerson.name}</p>
+                <p class="text-xs text-gray-500">${suggestedPerson.hn} | ${suggestedPerson.phone}</p>
+              </div>
+              <span class="text-green-600 text-sm">選択 →</span>
+            </div>
+          </div>
+        `;
+      } else {
+        document.getElementById('ipn-link-person-list').innerHTML = '';
+      }
+
+      document.getElementById('ipn-link-modal').classList.remove('hidden');
+    }
+
+    function closeIpnLinkModal() {
+      document.getElementById('ipn-link-modal').classList.add('hidden');
+      selectedIpn = null;
+      selectedLinkPerson = null;
+    }
+
+    function searchPersonForIpn() {
+      const query = document.getElementById('ipn-link-search').value.trim();
+      if (!query) return;
+
+      const normalizedQuery = query.replace(/[-\s]/g, '').toLowerCase();
+      const results = [];
+
+      for (const key in personData) {
+        const person = personData[key];
+        const normalizedHn = person.hn.replace(/[-\s]/g, '').toLowerCase();
+        const normalizedName = person.name.replace(/[-\s]/g, '').toLowerCase();
+        const normalizedPhone = person.phone.replace(/[-\s]/g, '').toLowerCase();
+
+        if (normalizedHn.includes(normalizedQuery) || normalizedQuery.includes(normalizedHn) ||
+            normalizedName.includes(normalizedQuery) || normalizedQuery.includes(normalizedName) ||
+            normalizedPhone.includes(normalizedQuery) || normalizedQuery.includes(normalizedPhone)) {
+          results.push(person);
+        }
+      }
+
+      const listEl = document.getElementById('ipn-link-person-list');
+      if (results.length === 0) {
+        listEl.innerHTML = '<p class="text-gray-400 text-sm py-2">該当する発信者がいません</p>';
+        return;
+      }
+
+      let html = '';
+      results.forEach(person => {
+        html += `
+          <div onclick="selectPersonForIpn('${person.hn}')"
+               class="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-blue-50 hover:border-blue-300 cursor-pointer">
+            <div>
+              <p class="font-bold text-gray-800">${person.name}</p>
+              <p class="text-xs text-gray-500">${person.hn} | ${person.phone}</p>
+            </div>
+          </div>
+        `;
+      });
+      listEl.innerHTML = html;
+    }
+
+    function selectPersonForIpn(hn) {
+      selectedLinkPerson = personData[hn];
+      if (!selectedLinkPerson) return;
+
+      document.getElementById('ipn-selected-person').classList.remove('hidden');
+      document.getElementById('ipn-selected-person-name').textContent = `${selectedLinkPerson.name} (${selectedLinkPerson.hn})`;
+      document.getElementById('ipn-link-confirm-btn').disabled = false;
+    }
+
+    function confirmIpnLink() {
+      if (!selectedLinkPerson) return;
+
+      // まとめて紐付けモードか単体モードか判定
+      const idsToLink = bulkIpnIds.length > 0 ? bulkIpnIds : (selectedIpn ? [selectedIpn.id] : []);
+
+      if (idsToLink.length === 0) return;
+
+      // 発信者データを取得
+      const person = personData[selectedLinkPerson.hn];
+      if (!person) return;
+
+      if (!person.linkedIpns) {
+        person.linkedIpns = [];
+      }
+
+      // 各IPNを紐付け
+      idsToLink.forEach(ipnId => {
+        const ipn = ipnData.find(d => d.id === ipnId);
+        if (ipn) {
+          ipn.linked = true;
+          ipn.linkedTo = selectedLinkPerson.hn;
+        }
+        if (!person.linkedIpns.includes(ipnId)) {
+          person.linkedIpns.push(ipnId);
+        }
+      });
+
+      const countMsg = idsToLink.length > 1 ? `${idsToLink.length}件の` : '';
+      alert(`${countMsg}IPNを紐付けました\n\n発信者: ${selectedLinkPerson.name} (${selectedLinkPerson.hn})\n\n（デモ：実際はDBに保存されます）`);
+
+      // リセット
+      bulkIpnIds = [];
+      selectedIpn = null;
+
+      closeIpnLinkModal();
+      renderIpnTable(ipnData);
+    }
+
+    // ========================================
+    // 受任通知登録機能
+    // ========================================
+    let selectedJuninPerson = null;
+
+    function openJuninModal() {
+      // リセット
+      selectedJuninPerson = null;
+      document.getElementById('junin-search').value = '';
+      document.getElementById('junin-person-list').innerHTML = '';
+      document.getElementById('junin-selected-person').classList.add('hidden');
+      document.getElementById('junin-new-name').value = '';
+      document.getElementById('junin-new-phone').value = '';
+      document.getElementById('junin-new-address').value = '';
+      document.getElementById('junin-lawyer-code').value = '';
+      document.getElementById('junin-lawyer-info').innerHTML = '<p class="text-gray-400 text-sm">2文字のコードを入力してください</p>';
+      document.getElementById('junin-note').value = '';
+
+      // 今日の日付をセット
+      const today = new Date().toISOString().split('T')[0];
+      document.getElementById('junin-date').value = today;
+
+      // 既存発信者モードに
+      document.querySelector('input[name="junin-person-type"][value="existing"]').checked = true;
+      toggleJuninPersonType();
+
+      document.getElementById('junin-modal').classList.remove('hidden');
+    }
+
+    // 弁護士コード入力時のリアルタイム表示
+    function onLawyerCodeInput() {
+      const code = document.getElementById('junin-lawyer-code').value.trim().toUpperCase();
+      const infoDiv = document.getElementById('junin-lawyer-info');
+
+      if (code.length < 2) {
+        infoDiv.innerHTML = '<p class="text-gray-400 text-sm">2文字のコードを入力してください</p>';
+        return;
+      }
+
+      const lawyer = getLawyerByCode(code);
+      if (lawyer) {
+        infoDiv.innerHTML = `
+          <div class="text-green-700">
+            <p class="font-bold text-lg">${lawyer.name}</p>
+            <p class="text-sm">${lawyer.office}</p>
+            <p class="text-xs text-gray-500">TEL: ${lawyer.phone}</p>
+          </div>
+        `;
+      } else {
+        infoDiv.innerHTML = `
+          <div class="text-red-600">
+            <p class="font-bold">⚠ 該当なし</p>
+            <p class="text-sm">コード「${code}」は登録されていません</p>
+          </div>
+        `;
+      }
+    }
+
+    function closeJuninModal() {
+      document.getElementById('junin-modal').classList.add('hidden');
+    }
+
+    function toggleJuninPersonType() {
+      const isExisting = document.querySelector('input[name="junin-person-type"]:checked').value === 'existing';
+      document.getElementById('junin-existing-section').classList.toggle('hidden', !isExisting);
+      document.getElementById('junin-new-section').classList.toggle('hidden', isExisting);
+    }
+
+    function searchPersonForJunin() {
+      const query = document.getElementById('junin-search').value.trim();
+      if (!query) return;
+
+      const normalizedQuery = query.replace(/[-\s]/g, '').toLowerCase();
+      const results = [];
+
+      for (const key in personData) {
+        const person = personData[key];
+        const normalizedHn = person.hn.replace(/[-\s]/g, '').toLowerCase();
+        const normalizedName = person.name.replace(/[-\s]/g, '').toLowerCase();
+        const normalizedPhone = person.phone.replace(/[-\s]/g, '').toLowerCase();
+
+        if (normalizedHn.includes(normalizedQuery) || normalizedQuery.includes(normalizedHn) ||
+            normalizedName.includes(normalizedQuery) || normalizedQuery.includes(normalizedName) ||
+            normalizedPhone.includes(normalizedQuery) || normalizedQuery.includes(normalizedPhone)) {
+          results.push(person);
+        }
+      }
+
+      const listEl = document.getElementById('junin-person-list');
+      if (results.length === 0) {
+        listEl.innerHTML = '<p class="text-gray-400 text-sm py-2">該当なし。「新規発信者として登録」を選択してください。</p>';
+        return;
+      }
+
+      let html = '';
+      results.forEach(person => {
+        const lawyerBadge = person.hasLawyer
+          ? '<span class="px-2 py-0.5 bg-red-100 text-red-600 text-xs rounded">弁護士あり</span>'
+          : '';
+        html += `
+          <div onclick="selectPersonForJunin('${person.hn}')"
+               class="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-blue-50 hover:border-blue-300 cursor-pointer">
+            <div>
+              <p class="font-bold text-gray-800">${person.name} ${lawyerBadge}</p>
+              <p class="text-xs text-gray-500">${person.hn} | ${person.phone}</p>
+            </div>
+          </div>
+        `;
+      });
+      listEl.innerHTML = html;
+    }
+
+    function selectPersonForJunin(hn) {
+      selectedJuninPerson = personData[hn];
+      if (!selectedJuninPerson) return;
+
+      document.getElementById('junin-selected-person').classList.remove('hidden');
+      document.getElementById('junin-selected-person-name').textContent = `${selectedJuninPerson.name} (${selectedJuninPerson.hn})`;
+    }
+
+    // 二重登録防止：類似発信者を検索
+    function findSimilarPersons(name, phone, address) {
+      const similar = [];
+      const normalizedName = name.replace(/[\s　]/g, '').toLowerCase();
+      const normalizedPhone = phone.replace(/[-\s]/g, '');
+
+      // 名前の姓だけ抽出（最初の文字列）
+      const lastName = name.split(/[\s　]/)[0];
+
+      for (const key in personData) {
+        const person = personData[key];
+        let matchScore = 0;
+        let matchReasons = [];
+
+        // 名前の類似度チェック
+        const pName = person.name.replace(/[\s　]/g, '').toLowerCase();
+        const pLastName = person.name.split(/[\s　]/)[0];
+
+        // 完全一致
+        if (normalizedName === pName) {
+          matchScore += 100;
+          matchReasons.push('名前完全一致');
+        }
+        // 姓が一致
+        else if (lastName === pLastName) {
+          matchScore += 30;
+          matchReasons.push('姓一致');
+        }
+        // 名前に含まれる
+        else if (normalizedName.includes(pName) || pName.includes(normalizedName)) {
+          matchScore += 20;
+          matchReasons.push('名前部分一致');
+        }
+
+        // 電話番号チェック
+        if (phone && phone !== '-') {
+          const pPhone = person.phone.replace(/[-\s]/g, '');
+          if (normalizedPhone === pPhone) {
+            matchScore += 100;
+            matchReasons.push('電話番号一致');
+          } else if (normalizedPhone.slice(-4) === pPhone.slice(-4) && normalizedPhone.length > 4) {
+            matchScore += 30;
+            matchReasons.push('電話番号下4桁一致');
+          }
+        }
+
+        // 住所チェック
+        if (address && address !== '-' && person.address && person.address !== '-') {
+          // 簡易的な住所比較（市区町村レベル）
+          const addrPart = address.slice(0, 10);
+          const pAddrPart = person.address.slice(0, 10);
+          if (addrPart === pAddrPart) {
+            matchScore += 20;
+            matchReasons.push('住所類似');
+          }
+        }
+
+        // スコアが30以上なら類似と判定
+        if (matchScore >= 30) {
+          similar.push({ ...person, matchScore, matchReasons });
+        }
+      }
+
+      // スコア順にソート
+      similar.sort((a, b) => b.matchScore - a.matchScore);
+      return similar.slice(0, 5); // 上位5件
+    }
+
+    function confirmJuninRegistration() {
+      const isExisting = document.querySelector('input[name="junin-person-type"]:checked').value === 'existing';
+      const lawyerCode = document.getElementById('junin-lawyer-code').value.trim().toUpperCase();
+      const juninDate = document.getElementById('junin-date').value;
+
+      // バリデーション：弁護士コード
+      if (!lawyerCode || lawyerCode.length !== 2) {
+        alert('弁護士コード（2文字）を入力してください');
+        document.getElementById('junin-lawyer-code').focus();
+        return;
+      }
+      const lawyer = getLawyerByCode(lawyerCode);
+      if (!lawyer) {
+        alert(`弁護士コード「${lawyerCode}」は登録されていません。\n正しいコードを入力してください。`);
+        document.getElementById('junin-lawyer-code').focus();
+        return;
+      }
+      if (!juninDate) {
+        alert('受任通知日を入力してください');
+        document.getElementById('junin-date').focus();
+        return;
+      }
+
+      let targetPerson;
+
+      if (isExisting) {
+        if (!selectedJuninPerson) {
+          alert('発信者を検索して選択してください');
+          return;
+        }
+        targetPerson = selectedJuninPerson;
+      } else {
+        // 新規発信者
+        const newName = document.getElementById('junin-new-name').value.trim();
+        const newPhone = document.getElementById('junin-new-phone').value.trim() || '-';
+        const newAddress = document.getElementById('junin-new-address').value.trim() || '-';
+
+        if (!newName) {
+          alert('氏名を入力してください');
+          document.getElementById('junin-new-name').focus();
+          return;
+        }
+
+        // 二重登録防止：類似チェック
+        const similarPersons = findSimilarPersons(newName, newPhone, newAddress);
+        if (similarPersons.length > 0) {
+          const personList = similarPersons.map(p => `・${p.name}（${p.hn}）${p.phone}`).join('\n');
+          const confirmMsg = `⚠ 類似する発信者が見つかりました：\n\n${personList}\n\n本当に新規登録しますか？\n（同一人物なら「キャンセル」して既存発信者を選択してください）`;
+          if (!confirm(confirmMsg)) {
+            return;
+          }
+        }
+
+        // 新しいHN-IDを生成（デモ）
+        const newHn = 'HN-' + String(Date.now()).slice(-6);
+        targetPerson = {
+          hn: newHn,
+          name: newName,
+          phone: newPhone,
+          address: newAddress,
+          hasLawyer: false,
+          lawyerName: null,
+          settlement: '未着手',
+          amount: 0,
+          docStatus: '未送付',
+          lastContact: '-',
+          linkedIpns: [],
+          negoHistory: [],
+          docHistory: []
+        };
+
+        // personDataに追加
+        personData[newHn] = targetPerson;
+      }
+
+      // 弁護士情報を設定（コードで管理）
+      const fullLawyerName = getLawyerDisplayName(lawyerCode);
+
+      targetPerson.hasLawyer = true;
+      targetPerson.lawyerCode = lawyerCode;  // コードを保存
+      targetPerson.lawyerName = fullLawyerName;
+
+      // 受任通知の履歴を記録
+      if (!targetPerson.negoHistory) {
+        targetPerson.negoHistory = [];
+      }
+      targetPerson.negoHistory.unshift({
+        type: 'other',
+        datetime: juninDate + ' 00:00',
+        content: `【受任通知】${fullLawyerName}より受任通知受領（コード: ${lawyerCode}）`,
+        user: loginUsername || 'システム'
+      });
+
+      targetPerson.lastContact = juninDate;
+
+      // 確認メッセージ
+      alert(`受任通知を登録しました\n\n発信者: ${targetPerson.name} (${targetPerson.hn})\n弁護士: ${fullLawyerName}\n弁護士コード: ${lawyerCode}\n受任日: ${juninDate}\n\n⚠ この発信者には直接連絡できません。\n書類は弁護士宛に送付してください。`);
+
+      closeJuninModal();
+
+      // 和解ステータスを再描画
+      renderSettlementStatus();
+    }
+
+    // 名前で検索
+    function searchByName(role) {
+      const name = document.getElementById('search-name-' + role.toLowerCase()).value;
+      if (name) {
+        openPersonDetail('HN-000456', name);
+      } else {
+        alert('名前を入力してください');
+      }
+    }
+
+    // 個人詳細画面を開く
+    function openPersonDetail(hnId, name, mandateStatus) {
+      document.querySelectorAll('[id$="-screen"]').forEach(el => el.classList.add('hidden'));
+      document.getElementById('person-detail-screen').classList.remove('hidden');
+
+      // ロールバッジ更新
+      const roleBadge = document.getElementById('current-role-badge');
+      roleBadge.textContent = 'ロール' + currentRole;
+
+      // 名前・ID更新（実際はDBから取得）
+      if (name) {
+        document.getElementById('detail-name').textContent = name;
+      }
+      document.getElementById('detail-hn-id').textContent = hnId;
+
+      // ★★★ 弁護士依頼状況の表示更新 ★★★
+      updateMandateHero(mandateStatus || 'yes');
+    }
+
+    // 弁護士依頼状況ヒーロー更新
+    function updateMandateHero(status) {
+      const hero = document.getElementById('mandate-hero');
+      const icon = document.getElementById('mandate-icon');
+      const statusText = document.getElementById('mandate-status-text');
+      const lawyerText = document.getElementById('mandate-lawyer-text');
+      const docPermission = document.getElementById('mandate-doc-permission');
+
+      // クラスをリセット
+      hero.classList.remove('mandate-hero-yes', 'mandate-hero-no', 'mandate-hero-pending');
+
+      if (status === 'yes') {
+        // 相手方が弁護士に依頼済み = 赤（注意・弁護士名義で送付）
+        hero.classList.add('mandate-hero-yes');
+        icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>';
+        statusText.textContent = '⚠ 弁護士あり';
+        lawyerText.textContent = '田中法律事務所 田中弁護士';
+        lawyerText.classList.remove('hidden');
+        docPermission.classList.add('hidden');
+      } else if (status === 'no') {
+        // 相手方が弁護士なし = 緑（本人対応）
+        hero.classList.add('mandate-hero-no');
+        icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>';
+        statusText.textContent = '本人対応';
+        lawyerText.textContent = '相手方に弁護士なし';
+        lawyerText.classList.remove('hidden');
+        docPermission.classList.add('hidden');
+      } else if (status === 'pending') {
+        hero.classList.add('mandate-hero-pending');
+        icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>';
+        statusText.textContent = '? 確認中';
+        lawyerText.textContent = '弁護士有無を確認中';
+        lawyerText.classList.remove('hidden');
+        docPermission.classList.add('hidden');
+      }
+    }
+
+    // タブ切り替え
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+      document.querySelectorAll('.tab-btn').forEach(el => {
+        el.classList.remove('tab-active');
+        el.classList.add('tab-inactive');
+      });
+      document.getElementById('tab-' + tabId).classList.remove('hidden');
+      document.querySelector(`[data-tab="${tabId}"]`).classList.remove('tab-inactive');
+      document.querySelector(`[data-tab="${tabId}"]`).classList.add('tab-active');
+    }
+
+    // タスク一覧表示
+    function showTaskList(type) {
+      alert(type + 'の一覧を表示（デモ）');
+    }
+
+    // 新規発信者登録
+    let selectedIpnsForNewPerson = [];
+
+    function openNewDisclosureModal() {
+      // リセット
+      document.getElementById('new-person-name').value = '';
+      document.getElementById('new-person-name-kana').value = '';
+      document.getElementById('new-person-user-name').value = '';
+      document.getElementById('new-person-user-kana').value = '';
+      document.getElementById('new-person-postal').value = '';
+      document.getElementById('new-person-address').value = '';
+      document.getElementById('new-person-phone').value = '';
+      document.getElementById('new-person-email').value = '';
+      document.getElementById('new-person-memo').value = '';
+      document.getElementById('similar-check-result').classList.add('hidden');
+
+      document.getElementById('new-person-modal').classList.remove('hidden');
+    }
+
+    function closeNewPersonModal() {
+      document.getElementById('new-person-modal').classList.add('hidden');
+    }
+
+    // ===================================================
+    // CSVアップロード機能
+    // ===================================================
+    let csvParsedData = [];
+
+    function openCsvUploadModal() {
+      // リセット
+      document.getElementById('csv-file-input').value = '';
+      document.getElementById('csv-file-name').classList.add('hidden');
+      document.getElementById('csv-preview-section').classList.add('hidden');
+      document.getElementById('csv-duplicate-section').classList.add('hidden');
+      document.getElementById('csv-import-btn').disabled = true;
+      csvParsedData = [];
+
+      document.getElementById('csv-upload-modal').classList.remove('hidden');
+    }
+
+    function closeCsvUploadModal() {
+      document.getElementById('csv-upload-modal').classList.add('hidden');
+    }
+
+    // ===================================================
+    // 弁護士受任通知登録
+    // ===================================================
+    let selectedPersonForLawyer = null;
+
+    function openLawyerNoticeModal() {
+      // リセット
+      document.getElementById('lawyer-notice-search').value = '';
+      document.getElementById('lawyer-notice-search-result').classList.add('hidden');
+      document.getElementById('lawyer-notice-selected').classList.add('hidden');
+      document.getElementById('lawyer-notice-code').value = '';
+      document.getElementById('lawyer-notice-name').value = '';
+      document.getElementById('lawyer-notice-date').value = new Date().toISOString().slice(0, 10);
+      document.getElementById('lawyer-notice-memo').value = '';
+      selectedPersonForLawyer = null;
+
+      document.getElementById('lawyer-notice-modal').classList.remove('hidden');
+    }
+
+    function closeLawyerNoticeModal() {
+      document.getElementById('lawyer-notice-modal').classList.add('hidden');
+    }
+
+    function searchForLawyerNotice() {
+      const query = document.getElementById('lawyer-notice-search').value.trim();
+      if (!query) {
+        alert('検索キーワードを入力してください');
+        return;
+      }
+
+      // 名前またはHNで検索
+      const results = Object.values(personData).filter(p =>
+        p.name.includes(query) || p.hn.includes(query.toUpperCase())
+      ).slice(0, 5);
+
+      const resultDiv = document.getElementById('lawyer-notice-search-result');
+
+      if (results.length === 0) {
+        resultDiv.innerHTML = '<p class="text-sm text-gray-500 py-2">該当者が見つかりません</p>';
+        resultDiv.classList.remove('hidden');
+        return;
+      }
+
+      let html = '<div class="space-y-1">';
+      results.forEach(p => {
+        const lawyerBadge = p.hasLawyer ? '<span class="text-xs px-1 py-0.5 bg-red-100 text-red-600 rounded ml-2">弁護士あり</span>' : '';
+        html += `
+          <div class="p-2 bg-gray-50 hover:bg-blue-50 rounded cursor-pointer flex justify-between items-center" onclick="selectPersonForLawyer('${p.hn}')">
+            <div>
+              <span class="font-medium">${p.name}</span>${lawyerBadge}
+              <span class="text-xs text-gray-500 ml-2">${p.hn}</span>
+            </div>
+            <span class="text-blue-500 text-sm">選択</span>
+          </div>
+        `;
+      });
+      html += '</div>';
+      resultDiv.innerHTML = html;
+      resultDiv.classList.remove('hidden');
+    }
+
+    function selectPersonForLawyer(hn) {
+      const person = personData[hn];
+      if (!person) return;
+
+      selectedPersonForLawyer = person;
+
+      document.getElementById('lawyer-notice-search-result').classList.add('hidden');
+      document.getElementById('lawyer-notice-selected').classList.remove('hidden');
+      document.getElementById('lawyer-notice-selected-name').textContent = person.name;
+      document.getElementById('lawyer-notice-selected-hn').textContent = person.hn + ' / ' + (person.address || '');
+    }
+
+    function lookupLawyerByCode() {
+      const code = document.getElementById('lawyer-notice-code').value.trim();
+      if (!code) return;
+
+      const lawyer = lawyerMaster[code];
+      if (lawyer) {
+        document.getElementById('lawyer-notice-name').value = lawyer.name;
+      } else {
+        document.getElementById('lawyer-notice-name').value = '';
+      }
+    }
+
+    function openLawyerMasterSelect() {
+      // 弁護士マスター一覧から選択（簡易版）
+      let options = Object.entries(lawyerMaster).map(([code, l]) => `${code}: ${l.name}`).join('\n');
+      const selected = prompt('弁護士コードを入力してください:\n\n' + options);
+      if (selected) {
+        const code = selected.split(':')[0].trim();
+        document.getElementById('lawyer-notice-code').value = code;
+        lookupLawyerByCode();
+      }
+    }
+
+    function saveLawyerNotice() {
+      if (!selectedPersonForLawyer) {
+        alert('発信者を選択してください');
+        return;
+      }
+
+      const code = document.getElementById('lawyer-notice-code').value.trim();
+      const name = document.getElementById('lawyer-notice-name').value.trim();
+      const date = document.getElementById('lawyer-notice-date').value;
+      const memo = document.getElementById('lawyer-notice-memo').value.trim();
+
+      if (!code) {
+        alert('弁護士コードを入力してください');
+        return;
+      }
+
+      // 発信者データを更新
+      selectedPersonForLawyer.hasLawyer = true;
+      selectedPersonForLawyer.lawyerCode = code;
+      selectedPersonForLawyer.lawyerName = name || lawyerMaster[code]?.name || '';
+      selectedPersonForLawyer.lawyerDate = date;
+      selectedPersonForLawyer.lawyerMemo = memo;
+
+      alert(`✅ 受任通知を登録しました\n\n発信者: ${selectedPersonForLawyer.name}\n弁護士: ${selectedPersonForLawyer.lawyerName}`);
+      closeLawyerNoticeModal();
+      updateRecentRegistrations();
+    }
+
+    // 弁護士受任通知 手動入力
+    function openLawyerNoticeManualModal() {
+      // リセット
+      document.getElementById('lawyer-manual-name').value = '';
+      document.getElementById('lawyer-manual-name-kana').value = '';
+      document.getElementById('lawyer-manual-user-name').value = '';
+      document.getElementById('lawyer-manual-user-kana').value = '';
+      document.getElementById('lawyer-manual-postal').value = '';
+      document.getElementById('lawyer-manual-address').value = '';
+      document.getElementById('lawyer-manual-phone').value = '';
+      document.getElementById('lawyer-manual-email').value = '';
+      document.getElementById('lawyer-manual-code').value = '';
+      document.getElementById('lawyer-manual-lawyer-name').value = '';
+      document.getElementById('lawyer-manual-date').value = new Date().toISOString().slice(0, 10);
+      document.getElementById('lawyer-manual-memo').value = '';
+
+      document.getElementById('lawyer-notice-manual-modal').classList.remove('hidden');
+    }
+
+    function closeLawyerNoticeManualModal() {
+      document.getElementById('lawyer-notice-manual-modal').classList.add('hidden');
+    }
+
+    function lookupLawyerByCodeManual() {
+      const code = document.getElementById('lawyer-manual-code').value.trim();
+      if (!code) return;
+
+      const lawyer = lawyerMaster[code];
+      if (lawyer) {
+        document.getElementById('lawyer-manual-lawyer-name').value = lawyer.name;
+      } else {
+        document.getElementById('lawyer-manual-lawyer-name').value = '';
+      }
+    }
+
+    function openLawyerMasterSelectManual() {
+      let options = Object.entries(lawyerMaster).map(([code, l]) => `${code}: ${l.name}`).join('\n');
+      const selected = prompt('弁護士コードを入力してください:\n\n' + options);
+      if (selected) {
+        const code = selected.split(':')[0].trim();
+        document.getElementById('lawyer-manual-code').value = code;
+        lookupLawyerByCodeManual();
+      }
+    }
+
+    function saveLawyerNoticeManual() {
+      const name = document.getElementById('lawyer-manual-name').value.trim();
+      const address = document.getElementById('lawyer-manual-address').value.trim();
+      const lawyerCode = document.getElementById('lawyer-manual-code').value.trim();
+
+      if (!name) {
+        alert('契約者名を入力してください');
+        return;
+      }
+      if (!address) {
+        alert('住所を入力してください');
+        return;
+      }
+      if (!lawyerCode) {
+        alert('弁護士コードを入力してください');
+        return;
+      }
+
+      // 新しいHN番号を生成
+      const newHn = `HN-${String(Math.floor(Math.random() * 900000) + 100000)}`;
+
+      // 発信者データを作成
+      personData[newHn] = {
+        hn: newHn,
+        name: name,
+        nameKana: document.getElementById('lawyer-manual-name-kana').value.trim(),
+        userName: document.getElementById('lawyer-manual-user-name').value.trim(),
+        userKana: document.getElementById('lawyer-manual-user-kana').value.trim(),
+        postal: document.getElementById('lawyer-manual-postal').value.trim(),
+        address: address,
+        phone: document.getElementById('lawyer-manual-phone').value.trim(),
+        email: document.getElementById('lawyer-manual-email').value.trim(),
+        memo: document.getElementById('lawyer-manual-memo').value.trim(),
+        status: '交渉中',
+        hasLawyer: true,
+        lawyerCode: lawyerCode,
+        lawyerName: document.getElementById('lawyer-manual-lawyer-name').value.trim() || lawyerMaster[lawyerCode]?.name || '',
+        lawyerDate: document.getElementById('lawyer-manual-date').value,
+        registeredAt: new Date().toISOString().slice(0, 10).replace(/-/g, '/')
+      };
+
+      const lawyerName = personData[newHn].lawyerName;
+      alert(`✅ 登録しました\n\n発信者: ${name}\n弁護士: ${lawyerName}\nHN: ${newHn}`);
+      closeLawyerNoticeManualModal();
+      updateRecentRegistrations();
+    }
+
+    function handleCsvFileSelect(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      document.getElementById('csv-file-name').textContent = `📄 ${file.name}`;
+      document.getElementById('csv-file-name').classList.remove('hidden');
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const text = e.target.result;
+        parseCsvForHdb(text);
+      };
+      reader.readAsText(file, 'Shift_JIS');
+    }
+
+    function parseCsvForHdb(csvText) {
+      const lines = csvText.split(/\r?\n/).filter(line => line.trim());
+      if (lines.length < 2) {
+        alert('CSVファイルにデータがありません');
+        return;
+      }
+
+      // ヘッダー解析
+      const headerLine = lines[0];
+      const headers = headerLine.split(',').map(h => h.trim().replace(/"/g, ''));
+
+      // カラムインデックス検索
+      const findCol = (names) => {
+        for (const name of names) {
+          const idx = headers.findIndex(h => h.includes(name));
+          if (idx !== -1) return idx;
+        }
+        return -1;
+      };
+
+      const nameIdx = findCol(['契約者名', '氏名', '名前', 'name']);
+      const nameKanaIdx = findCol(['ふりがな', 'かな', 'kana']);
+      const userNameIdx = findCol(['利用者名', '利用者']);
+      const userKanaIdx = findCol(['利用者ふりがな', '利用者かな']);
+      const postalIdx = findCol(['郵便番号', '〒', 'postal']);
+      const addressIdx = findCol(['住所', 'address']);
+      const phoneIdx = findCol(['電話', 'tel', 'phone']);
+      const emailIdx = findCol(['メール', 'mail', 'email']);
+      const memoIdx = findCol(['メモ', '備考', 'memo', 'note']);
+
+      if (nameIdx === -1 || addressIdx === -1) {
+        alert('必須カラム（契約者名、住所）が見つかりません');
+        return;
+      }
+
+      csvParsedData = [];
+      const duplicates = [];
+
+      for (let i = 1; i < lines.length; i++) {
+        const cols = lines[i].split(',').map(c => c.trim().replace(/"/g, ''));
+        if (cols.length < 2) continue;
+
+        const name = cols[nameIdx] || '';
+        const nameKana = nameKanaIdx !== -1 ? cols[nameKanaIdx] || '' : '';
+        const userName = userNameIdx !== -1 ? cols[userNameIdx] || '' : '';
+        const userKana = userKanaIdx !== -1 ? cols[userKanaIdx] || '' : '';
+        const postal = postalIdx !== -1 ? cols[postalIdx] || '' : '';
+        const address = cols[addressIdx] || '';
+        const phone = phoneIdx !== -1 ? cols[phoneIdx] || '' : '';
+        const email = emailIdx !== -1 ? cols[emailIdx] || '' : '';
+        const memo = memoIdx !== -1 ? cols[memoIdx] || '' : '';
+
+        if (!name || !address) continue;
+
+        // 重複チェック
+        const similar = findSimilarPersons(name, phone, address);
+        if (similar.length > 0) {
+          duplicates.push({ name, similar: similar[0].name });
+        }
+
+        csvParsedData.push({
+          name,
+          nameKana,
+          userName,
+          userKana,
+          postal,
+          address,
+          phone,
+          email,
+          memo
+        });
+      }
+
+      // プレビュー表示
+      if (csvParsedData.length > 0) {
+        const previewTbody = document.getElementById('csv-preview-tbody');
+        let html = '';
+        csvParsedData.slice(0, 10).forEach(row => {
+          html += `
+            <tr class="hover:bg-gray-50">
+              <td class="px-3 py-2">${row.name}</td>
+              <td class="px-3 py-2 text-xs text-gray-600">${row.address.substring(0, 20)}...</td>
+              <td class="px-3 py-2 text-xs">${row.phone || '-'}</td>
+              <td class="px-3 py-2 text-xs">${row.userName || '-'}</td>
+            </tr>
+          `;
+        });
+        previewTbody.innerHTML = html;
+        document.getElementById('csv-preview-count').textContent = `${csvParsedData.length}件`;
+        document.getElementById('csv-preview-section').classList.remove('hidden');
+        document.getElementById('csv-import-btn').disabled = false;
+      }
+
+      // 重複警告
+      if (duplicates.length > 0) {
+        const dupList = document.getElementById('csv-duplicate-list');
+        dupList.innerHTML = duplicates.slice(0, 5).map(d =>
+          `<p>・${d.name} → 既存: ${d.similar}</p>`
+        ).join('');
+        if (duplicates.length > 5) {
+          dupList.innerHTML += `<p class="mt-1">他 ${duplicates.length - 5} 件...</p>`;
+        }
+        document.getElementById('csv-duplicate-section').classList.remove('hidden');
+      }
+    }
+
+    function executeCsvImport() {
+      if (csvParsedData.length === 0) {
+        alert('インポートするデータがありません');
+        return;
+      }
+
+      if (!confirm(`${csvParsedData.length}件の開示結果を登録しますか？`)) {
+        return;
+      }
+
+      let successCount = 0;
+      csvParsedData.forEach(row => {
+        // 新しいHN番号を生成
+        const newHn = `HN-${String(Math.floor(Math.random() * 900000) + 100000)}`;
+
+        personData[newHn] = {
+          hn: newHn,
+          name: row.name,
+          nameKana: row.nameKana,
+          userName: row.userName,
+          userKana: row.userKana,
+          postal: row.postal,
+          address: row.address,
+          phone: row.phone,
+          email: row.email,
+          memo: row.memo,
+          status: '未着手',
+          hasLawyer: false,
+          lawyerCode: null,
+          lawyerName: null,
+          registeredAt: new Date().toISOString().slice(0, 10).replace(/-/g, '/')
+        };
+        successCount++;
+      });
+
+      alert(`✅ ${successCount}件を登録しました`);
+      closeCsvUploadModal();
+
+      // 最近の登録を更新（簡易版）
+      updateRecentRegistrations();
+    }
+
+    function updateRecentRegistrations() {
+      const container = document.getElementById('recent-registrations');
+      if (!container) return;
+
+      // personDataから最新3件を取得
+      const persons = Object.values(personData)
+        .sort((a, b) => (b.registeredAt || '').localeCompare(a.registeredAt || ''))
+        .slice(0, 3);
+
+      let html = '';
+      persons.forEach(p => {
+        html += `
+          <div class="p-3 bg-gray-50 rounded-lg flex justify-between items-center">
+            <div>
+              <p class="font-medium">${p.name}</p>
+              <p class="text-xs text-gray-500">${p.hn} / ${p.registeredAt || '-'}登録</p>
+            </div>
+            <span class="text-xs px-2 py-1 bg-green-100 text-green-700 rounded">登録済</span>
+          </div>
+        `;
+      });
+      container.innerHTML = html;
+    }
+
+    function checkSimilarPersons() {
+      const name = document.getElementById('new-person-name').value.trim();
+      const phone = document.getElementById('new-person-phone').value.trim();
+      const address = document.getElementById('new-person-address').value.trim();
+
+      if (!name) {
+        alert('氏名を入力してから類似チェックしてください');
+        return;
+      }
+
+      const similar = findSimilarPersons(name, phone, address);
+      const resultDiv = document.getElementById('similar-check-result');
+      const listDiv = document.getElementById('similar-person-list');
+
+      if (similar.length === 0) {
+        resultDiv.classList.add('hidden');
+        alert('✅ 類似する発信者は見つかりませんでした。\n新規登録を続けてください。');
+        return;
+      }
+
+      let html = '';
+      similar.forEach(person => {
+        const reasons = person.matchReasons ? person.matchReasons.join(', ') : '';
+        const lawyerBadge = person.hasLawyer
+          ? '<span class="px-2 py-0.5 bg-red-100 text-red-600 text-xs rounded ml-2">弁護士あり</span>'
+          : '';
+        html += `
+          <div class="flex items-center justify-between p-3 bg-white border border-yellow-200 rounded-lg">
+            <div>
+              <p class="font-bold text-gray-800">${person.name}${lawyerBadge}</p>
+              <p class="text-xs text-gray-500">${person.hn} | ${person.phone}</p>
+              <p class="text-xs text-yellow-600 mt-1">一致: ${reasons}</p>
+            </div>
+            <button onclick="useExistingPerson('${person.hn}')" class="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded text-sm">
+              この人を使う
+            </button>
+          </div>
+        `;
+      });
+      listDiv.innerHTML = html;
+      resultDiv.classList.remove('hidden');
+    }
+
+    function useExistingPerson(hn) {
+      const person = personData[hn];
+      if (!person) return;
+
+      if (confirm(`${person.name}（${person.hn}）を使用しますか？\n\n新規登録をキャンセルして、この発信者にIPNを紐付けます。`)) {
+        closeNewPersonModal();
+        // IPN紐付け画面を開く
+        alert(`${person.name}を選択しました。\nIPN紐付け画面から紐付けを行ってください。`);
+      }
+    }
+
+    function searchIpnForNewPerson() {
+      const ip = document.getElementById('new-person-ipn-search').value.trim();
+      if (!ip) return;
+
+      const results = ipnData.filter(d => !d.linked && d.ip.includes(ip));
+      const listDiv = document.getElementById('new-person-ipn-list');
+
+      if (results.length === 0) {
+        listDiv.innerHTML = '<p class="text-gray-400 text-sm py-2">該当する未紐付けIPNがありません</p>';
+        return;
+      }
+
+      let html = '';
+      results.forEach(ipn => {
+        const isSelected = selectedIpnsForNewPerson.includes(ipn.id);
+        const btnClass = isSelected
+          ? 'bg-green-500 text-white'
+          : 'bg-gray-200 hover:bg-orange-500 hover:text-white';
+        const btnText = isSelected ? '✓ 選択中' : '選択';
+
+        html += `
+          <div class="flex items-center justify-between p-2 border border-gray-200 rounded text-sm">
+            <div>
+              <span class="font-mono">${ipn.ip}:${ipn.port}</span>
+              <span class="text-gray-500 ml-2">${ipn.title}</span>
+            </div>
+            <button onclick="toggleIpnSelection('${ipn.id}')" class="px-2 py-1 rounded text-xs ${btnClass}">
+              ${btnText}
+            </button>
+          </div>
+        `;
+      });
+      listDiv.innerHTML = html;
+    }
+
+    function toggleIpnSelection(ipnId) {
+      const idx = selectedIpnsForNewPerson.indexOf(ipnId);
+      if (idx >= 0) {
+        selectedIpnsForNewPerson.splice(idx, 1);
+      } else {
+        selectedIpnsForNewPerson.push(ipnId);
+      }
+      // 再描画
+      searchIpnForNewPerson();
+      updateSelectedIpnTags();
+    }
+
+    function updateSelectedIpnTags() {
+      const container = document.getElementById('new-person-selected-ipns');
+      const tagsDiv = document.getElementById('selected-ipn-tags');
+
+      if (selectedIpnsForNewPerson.length === 0) {
+        container.classList.add('hidden');
+        return;
+      }
+
+      container.classList.remove('hidden');
+      let html = '';
+      selectedIpnsForNewPerson.forEach(ipnId => {
+        const ipn = ipnData.find(d => d.id === ipnId);
+        if (ipn) {
+          html += `<span class="px-2 py-1 bg-orange-100 text-orange-700 rounded text-xs">${ipn.ip} - ${ipn.title}</span>`;
+        }
+      });
+      tagsDiv.innerHTML = html;
+    }
+
+    function confirmNewPersonRegistration() {
+      const name = document.getElementById('new-person-name').value.trim();
+      const phone = document.getElementById('new-person-phone').value.trim() || '-';
+      const address = document.getElementById('new-person-address').value.trim();
+
+      if (!name) {
+        alert('氏名を入力してください');
+        document.getElementById('new-person-name').focus();
+        return;
+      }
+      if (!address) {
+        alert('住所を入力してください');
+        document.getElementById('new-person-address').focus();
+        return;
+      }
+
+      // 類似チェック（未実行の場合も実行）
+      const similar = findSimilarPersons(name, phone, address);
+      if (similar.length > 0) {
+        const personList = similar.map(p => `・${p.name}（${p.hn}）`).join('\n');
+        if (!confirm(`⚠ 類似する発信者がいます：\n\n${personList}\n\n本当に新規登録しますか？`)) {
+          return;
+        }
+      }
+
+      // 新規登録
+      const newHn = 'HN-' + String(Date.now()).slice(-6);
+      const newPerson = {
+        hn: newHn,
+        name: name,
+        phone: phone,
+        address: address,
+        hasLawyer: false,
+        lawyerName: null,
+        settlement: '未着手',
+        amount: 0,
+        docStatus: '未送付',
+        lastContact: '-',
+        linkedIpns: [],
+        negoHistory: [],
+        docHistory: []
+      };
+
+      // IPNを紐付け
+      selectedIpnsForNewPerson.forEach(ipnId => {
+        const ipn = ipnData.find(d => d.id === ipnId);
+        if (ipn) {
+          ipn.linked = true;
+          ipn.linkedTo = newHn;
+          newPerson.linkedIpns.push(ipnId);
+        }
+      });
+
+      personData[newHn] = newPerson;
+
+      const ipnMsg = selectedIpnsForNewPerson.length > 0
+        ? `\nIPN紐付け: ${selectedIpnsForNewPerson.length}件`
+        : '';
+
+      alert(`発信者を登録しました\n\nID: ${newHn}\n氏名: ${name}\n住所: ${address}${ipnMsg}`);
+
+      closeNewPersonModal();
+    }
+  </script>
+
+</body>
+</html>

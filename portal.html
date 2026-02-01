@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>データベースポータル</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+        .card-hover:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+        }
+        .hdb-gradient {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .wdb-gradient {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        }
+        .portal-bg {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+        }
+    </style>
+</head>
+<body class="portal-bg">
+    <div class="min-h-screen flex flex-col items-center justify-center p-8">
+        <!-- Header -->
+        <div class="text-center mb-12">
+            <h1 class="text-4xl font-bold text-white mb-4">📊 データベースポータル</h1>
+            <p class="text-gray-300 text-lg">管理システムを選択してください</p>
+        </div>
+
+        <!-- Database Cards -->
+        <div class="grid md:grid-cols-2 gap-8 max-w-4xl w-full">
+            <!-- HDB Card -->
+            <a href="hdb-dashboard.html" class="card-hover block">
+                <div class="hdb-gradient rounded-2xl p-8 text-white h-full">
+                    <div class="flex items-center mb-6">
+                        <div class="w-16 h-16 bg-white/20 rounded-xl flex items-center justify-center text-3xl">
+                            👤
+                        </div>
+                        <div class="ml-4">
+                            <h2 class="text-2xl font-bold">HDB</h2>
+                            <p class="text-white/80">発信者情報データベース</p>
+                        </div>
+                    </div>
+
+                    <div class="space-y-3 mb-6">
+                        <div class="flex items-center text-white/90">
+                            <span class="mr-2">✓</span>
+                            <span>発信者（人）の管理</span>
+                        </div>
+                        <div class="flex items-center text-white/90">
+                            <span class="mr-2">✓</span>
+                            <span>開示結果の紐付け</span>
+                        </div>
+                        <div class="flex items-center text-white/90">
+                            <span class="mr-2">✓</span>
+                            <span>受任・交渉の管理</span>
+                        </div>
+                        <div class="flex items-center text-white/90">
+                            <span class="mr-2">✓</span>
+                            <span>書類送付履歴</span>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-between pt-4 border-t border-white/20">
+                        <div class="flex gap-2">
+                            <span class="px-2 py-1 bg-white/20 rounded text-xs">事務担当</span>
+                            <span class="px-2 py-1 bg-white/20 rounded text-xs">管理者</span>
+                            <span class="px-2 py-1 bg-white/20 rounded text-xs">弁護士</span>
+                        </div>
+                        <span class="text-2xl">→</span>
+                    </div>
+                </div>
+            </a>
+
+            <!-- WDB Card -->
+            <a href="wdb-dashboard.html" class="card-hover block">
+                <div class="wdb-gradient rounded-2xl p-8 text-white h-full">
+                    <div class="flex items-center mb-6">
+                        <div class="w-16 h-16 bg-white/20 rounded-xl flex items-center justify-center text-3xl">
+                            💰
+                        </div>
+                        <div class="ml-4">
+                            <h2 class="text-2xl font-bold">WDB</h2>
+                            <p class="text-white/80">和解・入金データベース</p>
+                        </div>
+                    </div>
+
+                    <div class="space-y-3 mb-6">
+                        <div class="flex items-center text-white/90">
+                            <span class="mr-2">✓</span>
+                            <span>和解・合意の管理</span>
+                        </div>
+                        <div class="flex items-center text-white/90">
+                            <span class="mr-2">✓</span>
+                            <span>入金スケジュール</span>
+                        </div>
+                        <div class="flex items-center text-white/90">
+                            <span class="mr-2">✓</span>
+                            <span>入金実績の記録</span>
+                        </div>
+                        <div class="flex items-center text-white/90">
+                            <span class="mr-2">✓</span>
+                            <span>権利者への支払管理</span>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-between pt-4 border-t border-white/20">
+                        <div class="flex gap-2">
+                            <span class="px-2 py-1 bg-white/20 rounded text-xs">入金担当</span>
+                            <span class="px-2 py-1 bg-white/20 rounded text-xs">管理者</span>
+                            <span class="px-2 py-1 bg-white/20 rounded text-xs">弁護士</span>
+                            <span class="px-2 py-1 bg-white/20 rounded text-xs">経理</span>
+                        </div>
+                        <span class="text-2xl">→</span>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <!-- Footer Info -->
+        <div class="mt-12 text-center text-gray-400 text-sm">
+            <p>HDB: 人・事件・交渉を管理 ｜ WDB: 金額・期日・入金を管理</p>
+            <p class="mt-2">※ 合意が成立したらHDBからWDBへ連携されます</p>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,2776 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WDB - 和解・入金管理システム</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .form-input:focus { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15); }
+    .tab-active { background-color: #2563eb; color: white; }
+    .tab-inactive { background-color: #e5e7eb; color: #374151; }
+    .tab-inactive:hover { background-color: #d1d5db; }
+    .elegant-header { background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 50%, #60a5fa 100%); }
+    .elegant-btn { background: linear-gradient(135deg, #1e40af, #2563eb); transition: all 0.3s ease; }
+    .elegant-btn:hover { background: linear-gradient(135deg, #1e3a8a, #1d4ed8); transform: translateY(-1px); }
+    .role-badge { display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.125rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
+    .role-a { background-color: #dbeafe; color: #1e40af; }
+    .role-b { background-color: #fef3c7; color: #92400e; }
+    .role-c { background-color: #d1fae5; color: #065f46; }
+    .role-d { background-color: #ede9fe; color: #5b21b6; }
+    .status-pending { background-color: #f3f4f6; color: #4b5563; }
+    .status-paid { background-color: #d1fae5; color: #065f46; }
+    .status-partial { background-color: #fef3c7; color: #92400e; }
+    .status-overdue { background-color: #fee2e2; color: #991b1b; }
+    .card-hover { transition: all 0.2s ease; }
+    .card-hover:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+    .admin-warning { background: repeating-linear-gradient(45deg, #fef3c7, #fef3c7 10px, #fef9c3 10px, #fef9c3 20px); }
+  </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+
+  <!-- ========================================== -->
+  <!-- ロール選択画面（最初の画面） -->
+  <!-- ========================================== -->
+  <div id="role-select-screen" class="min-h-screen flex items-center justify-center">
+    <div class="w-full max-w-2xl mx-4">
+      <div class="bg-white rounded-2xl shadow-xl overflow-hidden">
+        <div class="elegant-header text-white px-6 py-8 text-center relative">
+          <a href="portal.html" class="absolute top-4 left-4 flex items-center gap-2 text-white/80 hover:text-white transition text-sm">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+            </svg>
+            ポータルへ
+          </a>
+          <div class="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+          </div>
+          <h1 class="text-2xl font-bold mb-2">WDB - 和解・入金管理システム</h1>
+          <p class="text-blue-200">ロールを選択してください</p>
+        </div>
+
+        <!-- 不正防止の説明 -->
+        <div class="px-6 pb-2">
+          <div class="p-3 bg-red-50 border border-red-200 rounded-lg">
+            <p class="text-sm text-red-700">⚠ <strong>入金登録と入金承認は別担当者が行う必要があります</strong>（不正防止）</p>
+          </div>
+        </div>
+
+        <div class="p-6 pt-3 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <!-- ロールA: 入金登録 -->
+          <button onclick="enterRole('A')" class="p-6 bg-blue-50 hover:bg-blue-100 border-2 border-blue-200 rounded-xl text-left transition">
+            <div class="flex items-center gap-3 mb-3">
+              <div class="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center">
+                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                </svg>
+              </div>
+              <span class="role-badge role-a">ロールA</span>
+            </div>
+            <h3 class="font-bold text-gray-800 mb-1">入金登録担当</h3>
+            <p class="text-sm text-gray-600">入金照合の登録・催促作業</p>
+            <p class="text-xs text-blue-600 mt-2">※登録のみ、確定は別担当</p>
+          </button>
+
+          <!-- ロールA2: 入金承認 -->
+          <button onclick="enterRole('A2')" class="p-6 bg-teal-50 hover:bg-teal-100 border-2 border-teal-200 rounded-xl text-left transition">
+            <div class="flex items-center gap-3 mb-3">
+              <div class="w-10 h-10 bg-teal-500 rounded-lg flex items-center justify-center">
+                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+              </div>
+              <span class="role-badge" style="background-color: #ccfbf1; color: #0f766e;">ロールA2</span>
+            </div>
+            <h3 class="font-bold text-gray-800 mb-1">入金承認担当</h3>
+            <p class="text-sm text-gray-600">登録済み入金の確認・承認</p>
+            <p class="text-xs text-teal-600 mt-2">※登録者と別の担当者が確認</p>
+          </button>
+
+          <!-- ロールB -->
+          <button onclick="enterRole('B')" class="p-6 bg-amber-50 hover:bg-amber-100 border-2 border-amber-200 rounded-xl text-left transition">
+            <div class="flex items-center gap-3 mb-3">
+              <div class="w-10 h-10 bg-amber-500 rounded-lg flex items-center justify-center">
+                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                </svg>
+              </div>
+              <span class="role-badge role-b">ロールB</span>
+            </div>
+            <h3 class="font-bold text-gray-800 mb-1">管理者</h3>
+            <p class="text-sm text-gray-600">合意変更・例外承認・修正</p>
+          </button>
+
+          <!-- ロールC -->
+          <button onclick="enterRole('C')" class="p-6 bg-green-50 hover:bg-green-100 border-2 border-green-200 rounded-xl text-left transition">
+            <div class="flex items-center gap-3 mb-3">
+              <div class="w-10 h-10 bg-green-500 rounded-lg flex items-center justify-center">
+                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                </svg>
+              </div>
+              <span class="role-badge role-c">ロールC</span>
+            </div>
+            <h3 class="font-bold text-gray-800 mb-1">弁護士</h3>
+            <p class="text-sm text-gray-600">状況確認・判断（参照専用）</p>
+          </button>
+
+          <!-- ロールD -->
+          <button onclick="enterRole('D')" class="p-6 bg-purple-50 hover:bg-purple-100 border-2 border-purple-200 rounded-xl text-left transition">
+            <div class="flex items-center gap-3 mb-3">
+              <div class="w-10 h-10 bg-purple-500 rounded-lg flex items-center justify-center">
+                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                </svg>
+              </div>
+              <span class="role-badge role-d">ロールD</span>
+            </div>
+            <h3 class="font-bold text-gray-800 mb-1">経理／支払担当</h3>
+            <p class="text-sm text-gray-600">権利者別集計・振込・本人対応</p>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- ロールA: 入金確認担当（事務）UI -->
+  <!-- ========================================== -->
+  <div id="role-a-screen" class="hidden min-h-screen">
+    <header class="bg-blue-600 text-white shadow-lg">
+      <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <span class="role-badge bg-white/20 text-white">ロールA</span>
+          <h1 class="text-lg font-bold">入金確認担当</h1>
+        </div>
+        <button onclick="backToRoleSelect()" class="text-blue-100 hover:text-white text-sm flex items-center gap-1">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 17l-5-5m0 0l5-5m-5 5h12"></path>
+          </svg>
+          ロール選択に戻る
+        </button>
+      </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 py-6">
+      <!-- タスクカード -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div class="bg-white rounded-xl shadow-md p-4 card-hover border-l-4 border-yellow-500 cursor-pointer" onclick="showTaskList('unmatched')">
+          <p class="text-sm text-gray-500">未照合入金</p>
+          <p class="text-2xl font-bold text-yellow-600">5件</p>
+          <p class="text-xs text-gray-400 mt-1">→ クリックで一覧表示</p>
+        </div>
+        <div class="bg-white rounded-xl shadow-md p-4 card-hover border-l-4 border-blue-500 cursor-pointer" onclick="showTaskList('today')">
+          <p class="text-sm text-gray-500">本日入金予定</p>
+          <p class="text-2xl font-bold text-blue-600">8件</p>
+          <p class="text-xs text-gray-400 mt-1">→ クリックで一覧表示</p>
+        </div>
+        <div class="bg-white rounded-xl shadow-md p-4 card-hover border-l-4 border-red-500 cursor-pointer" onclick="showTaskList('overdue')">
+          <p class="text-sm text-gray-500">期限超過</p>
+          <p class="text-2xl font-bold text-red-600">3件</p>
+          <p class="text-xs text-gray-400 mt-1">→ クリックで一覧表示</p>
+        </div>
+      </div>
+
+      <!-- 不正防止注意 -->
+      <div class="mb-4 p-3 bg-yellow-50 border border-yellow-300 rounded-lg">
+        <p class="text-sm text-yellow-800">⚠ <strong>登録のみ可能です。</strong>登録後、別の担当者（ロールA2）が承認を行います。</p>
+      </div>
+
+      <!-- 入金照合画面（発信者ID単位） -->
+      <div class="bg-white rounded-xl shadow-md overflow-hidden mb-6">
+        <div class="p-4 border-b border-gray-100 bg-blue-50">
+          <h2 class="text-lg font-bold text-gray-800">入金照合【登録】</h2>
+          <p class="text-sm text-gray-600">銀行入金と和解スケジュールを照合して登録します（確定は別担当者）</p>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-gray-100">
+          <!-- 左：PayPay銀行入金リスト -->
+          <div class="p-4">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="font-bold text-gray-700 flex items-center gap-2">
+                <span class="w-3 h-3 bg-green-500 rounded-full"></span>
+                PayPay銀行入金（未照合）
+              </h3>
+              <button onclick="openImportModal()" class="px-3 py-1 bg-green-500 hover:bg-green-600 text-white rounded text-sm flex items-center gap-1">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
+                </svg>
+                CSVインポート
+              </button>
+            </div>
+            <div id="bank-deposit-list" class="space-y-2 max-h-80 overflow-y-auto">
+              <!-- 動的に生成 -->
+            </div>
+
+            <div class="mt-4 pt-4 border-t border-gray-200 space-y-2">
+              <button onclick="openExceptionModal()" class="w-full px-4 py-2 bg-amber-100 hover:bg-amber-200 text-amber-800 rounded-lg text-sm font-medium">
+                例外入金登録（現金・その他）
+              </button>
+            </div>
+          </div>
+
+          <!-- 右：マッチング候補 -->
+          <div class="p-4">
+            <h3 class="font-bold text-gray-700 mb-3 flex items-center gap-2">
+              <span class="w-3 h-3 bg-blue-500 rounded-full"></span>
+              マッチング候補
+            </h3>
+            <div id="match-candidate-list" class="space-y-2 max-h-80 overflow-y-auto">
+              <p class="text-gray-500 text-sm p-4 text-center">左の入金を選択してください</p>
+            </div>
+
+            <div class="mt-4 pt-4 border-t border-gray-200">
+              <button id="confirm-match-btn" onclick="confirmMatch()" disabled
+                class="w-full bg-gray-300 text-gray-500 py-3 rounded-lg font-medium cursor-not-allowed">
+                照合する入金を選択してください
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 催促作業一覧 -->
+      <div class="bg-white rounded-xl shadow-md overflow-hidden mb-6">
+        <div class="p-4 border-b border-gray-100 bg-orange-50 flex justify-between items-center">
+          <div>
+            <h3 class="font-bold text-orange-800">📞 催促作業</h3>
+            <p class="text-sm text-orange-600">3日以上連絡なしの案件</p>
+          </div>
+          <span id="reminder-count" class="px-3 py-1 bg-orange-500 text-white rounded-full text-sm font-bold">0件</span>
+        </div>
+        <div id="reminder-list" class="divide-y divide-gray-100 max-h-96 overflow-y-auto">
+          <!-- 動的に生成 -->
+        </div>
+      </div>
+
+      <!-- 期限超過一覧（発信者ID単位） -->
+      <div class="bg-white rounded-xl shadow-md overflow-hidden">
+        <div class="p-4 border-b border-gray-100 bg-red-50">
+          <h3 class="font-bold text-red-800">⚠ 期限超過（発信者ID単位）</h3>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">発信者ID</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">氏名</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">和解ID</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">回</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">期日</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">金額</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">遅延</th>
+                <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">催促</th>
+              </tr>
+            </thead>
+            <tbody id="overdue-tbody" class="divide-y divide-gray-100">
+              <!-- 動的に生成 -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- ロールA2: 入金承認担当UI -->
+  <!-- ========================================== -->
+  <div id="role-a2-screen" class="hidden min-h-screen">
+    <header class="bg-teal-600 text-white shadow-lg">
+      <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <span class="role-badge bg-white/20 text-white">ロールA2</span>
+          <h1 class="text-lg font-bold">入金承認担当</h1>
+        </div>
+        <button onclick="backToRoleSelect()" class="text-teal-100 hover:text-white text-sm flex items-center gap-1">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 17l-5-5m0 0l5-5m-5 5h12"></path>
+          </svg>
+          ロール選択に戻る
+        </button>
+      </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 py-6">
+      <!-- 不正防止警告 -->
+      <div class="mb-6 p-4 bg-teal-50 border-2 border-teal-300 rounded-xl">
+        <div class="flex items-center gap-3">
+          <svg class="w-8 h-8 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+          </svg>
+          <div>
+            <p class="font-bold text-teal-800">入金承認画面（不正防止）</p>
+            <p class="text-sm text-teal-700">登録者と異なる担当者が承認を行ってください。同一人物による登録・承認は禁止されています。</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- タスクカード -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <div class="bg-white rounded-xl shadow-md p-4 card-hover border-l-4 border-yellow-500">
+          <p class="text-sm text-gray-500">承認待ち（通常入金）</p>
+          <p id="pending-normal-count" class="text-2xl font-bold text-yellow-600">0件</p>
+        </div>
+        <div class="bg-white rounded-xl shadow-md p-4 card-hover border-l-4 border-orange-500">
+          <p class="text-sm text-gray-500">承認待ち（例外入金）</p>
+          <p id="pending-exception-count" class="text-2xl font-bold text-orange-600">0件</p>
+        </div>
+      </div>
+
+      <!-- 承認待ち一覧 -->
+      <div class="bg-white rounded-xl shadow-md overflow-hidden mb-6">
+        <div class="p-4 border-b border-gray-100 bg-yellow-50 flex items-center justify-between">
+          <div>
+            <h3 class="font-bold text-gray-800">🔍 承認待ち入金一覧</h3>
+            <p class="text-sm text-gray-600">登録者と内容を確認し、承認または差戻しを行ってください</p>
+          </div>
+          <button id="bulk-approve-btn" onclick="bulkApprove()" disabled
+            class="px-4 py-2 bg-gray-300 text-gray-500 rounded-lg font-medium cursor-not-allowed hidden">
+            選択した項目を一括承認
+          </button>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase w-12">
+                  <input type="checkbox" id="select-all-pending" onchange="toggleSelectAll()" class="w-4 h-4">
+                </th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">登録日時</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">種別</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">入金者</th>
+                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">入金額</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">和解情報</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">登録者</th>
+                <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">操作</th>
+              </tr>
+            </thead>
+            <tbody id="pending-approval-tbody" class="divide-y divide-gray-100">
+              <!-- 動的に生成 -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 本日承認済み -->
+      <div class="bg-white rounded-xl shadow-md overflow-hidden">
+        <div class="p-4 border-b border-gray-100 bg-green-50">
+          <h3 class="font-bold text-gray-800">✅ 本日承認済み</h3>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">承認日時</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">発信者</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">和解ID</th>
+                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">金額</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">登録者</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">承認者</th>
+              </tr>
+            </thead>
+            <tbody id="approved-today-tbody" class="divide-y divide-gray-100">
+              <!-- 動的に生成 -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- ロールB: 管理者UI -->
+  <!-- ========================================== -->
+  <div id="role-b-screen" class="hidden min-h-screen">
+    <header class="bg-amber-600 text-white shadow-lg">
+      <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <span class="role-badge bg-white/20 text-white">ロールB</span>
+          <h1 class="text-lg font-bold">管理者</h1>
+        </div>
+        <button onclick="backToRoleSelect()" class="text-amber-100 hover:text-white text-sm flex items-center gap-1">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 17l-5-5m0 0l5-5m-5 5h12"></path>
+          </svg>
+          ロール選択に戻る
+        </button>
+      </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 py-6">
+      <!-- 管理者警告バナー -->
+      <div class="admin-warning border-2 border-amber-400 rounded-xl p-4 mb-6">
+        <div class="flex items-center gap-3">
+          <svg class="w-8 h-8 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+          </svg>
+          <div>
+            <p class="font-bold text-amber-800">⚠ 管理者専用画面</p>
+            <p class="text-sm text-amber-700">操作ログがすべて記録されます</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- タスクカード -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <div class="bg-white rounded-xl shadow-md p-4 card-hover border-l-4 border-amber-500 cursor-pointer">
+          <p class="text-sm text-gray-500">例外入金承認待ち</p>
+          <p class="text-2xl font-bold text-amber-600">2件</p>
+        </div>
+        <div class="bg-white rounded-xl shadow-md p-4 card-hover border-l-4 border-purple-500 cursor-pointer">
+          <p class="text-sm text-gray-500">合意変更申請</p>
+          <p class="text-2xl font-bold text-purple-600">1件</p>
+        </div>
+      </div>
+
+      <!-- 発信者検索 -->
+      <div class="bg-white rounded-xl shadow-md p-6 mb-6">
+        <h3 class="font-bold text-gray-800 mb-4">発信者検索（合意変更・修正）</h3>
+        <div class="flex gap-4">
+          <input type="text" id="role-b-search" placeholder="発信者ID or 氏名（HN-000000 / 山田）"
+            class="flex-1 px-4 py-2 border border-gray-300 rounded-lg form-input"
+            onkeypress="if(event.key==='Enter') searchForRoleB()">
+          <button onclick="searchForRoleB()" class="elegant-btn text-white px-6 py-2 rounded-lg">検索</button>
+        </div>
+        <div id="role-b-result" class="mt-4 hidden">
+          <!-- 動的に生成 -->
+        </div>
+      </div>
+
+      <!-- 例外入金承認 -->
+      <div class="bg-white rounded-xl shadow-md overflow-hidden">
+        <div class="p-4 border-b border-gray-100 bg-amber-50">
+          <h3 class="font-bold text-gray-800">例外入金承認待ち</h3>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">発信者ID</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">氏名</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">金額</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">経路</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">受領者</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">登録者</th>
+                <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">操作</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+              <tr class="hover:bg-amber-50">
+                <td class="px-4 py-3 text-sm font-bold text-blue-600">HN-000890</td>
+                <td class="px-4 py-3 text-sm">高橋 四郎</td>
+                <td class="px-4 py-3 text-sm">¥10,000</td>
+                <td class="px-4 py-3"><span class="px-2 py-1 bg-amber-100 text-amber-700 rounded text-xs">現金</span></td>
+                <td class="px-4 py-3 text-sm">田中</td>
+                <td class="px-4 py-3 text-sm">鈴木</td>
+                <td class="px-4 py-3 text-center">
+                  <button class="px-3 py-1 bg-green-500 hover:bg-green-600 text-white rounded text-sm mr-2">承認</button>
+                  <button class="px-3 py-1 bg-red-500 hover:bg-red-600 text-white rounded text-sm">却下</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- ロールC: 弁護士UI -->
+  <!-- ========================================== -->
+  <div id="role-c-screen" class="hidden min-h-screen">
+    <header class="bg-green-600 text-white shadow-lg">
+      <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <span class="role-badge bg-white/20 text-white">ロールC</span>
+          <h1 class="text-lg font-bold">弁護士（参照専用）</h1>
+        </div>
+        <button onclick="backToRoleSelect()" class="text-green-100 hover:text-white text-sm flex items-center gap-1">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 17l-5-5m0 0l5-5m-5 5h12"></path>
+          </svg>
+          ロール選択に戻る
+        </button>
+      </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 py-6">
+      <div class="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl">
+        <p class="text-green-800">このUIは参照専用です。変更操作はできません。</p>
+      </div>
+
+      <!-- タブ切り替え -->
+      <div class="flex gap-2 mb-6">
+        <button onclick="showLawyerTab('search')" id="lawyer-tab-search" class="px-4 py-2 rounded-lg font-medium tab-active">発信者検索</button>
+        <button onclick="showLawyerTab('stats')" id="lawyer-tab-stats" class="px-4 py-2 rounded-lg font-medium tab-inactive">弁護士別集計</button>
+      </div>
+
+      <!-- 発信者検索 -->
+      <div id="lawyer-search-section" class="bg-white rounded-xl shadow-md p-6 mb-6">
+        <h3 class="font-bold text-gray-800 mb-4">発信者検索</h3>
+        <div class="flex gap-4">
+          <input type="text" id="role-c-search" placeholder="発信者ID or 氏名（HN-000000 / 山田）"
+            class="flex-1 px-4 py-2 border border-gray-300 rounded-lg form-input"
+            onkeypress="if(event.key==='Enter') searchForRoleC()">
+          <button onclick="searchForRoleC()" class="elegant-btn text-white px-6 py-2 rounded-lg">検索</button>
+        </div>
+        <div id="role-c-result" class="mt-4 hidden">
+          <!-- 動的に生成 -->
+        </div>
+      </div>
+
+      <!-- 弁護士別集計 -->
+      <div id="lawyer-stats-section" class="hidden bg-white rounded-xl shadow-md overflow-hidden mb-6">
+        <div class="p-4 border-b border-gray-100 bg-green-50 flex justify-between items-center">
+          <h3 class="font-bold text-gray-800">弁護士別集計</h3>
+          <button onclick="exportLawyerStats()" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm">レポート出力</button>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">弁護士</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">事務所</th>
+                <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">案件数</th>
+                <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">進行中</th>
+                <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">遅延</th>
+                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">合計額</th>
+                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">入金済</th>
+                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">残額</th>
+              </tr>
+            </thead>
+            <tbody id="lawyer-stats-tbody" class="divide-y divide-gray-100">
+              <!-- 動的に生成 -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 要判断案件 -->
+      <div class="bg-white rounded-xl shadow-md overflow-hidden mb-6">
+        <div class="p-4 border-b border-gray-100 bg-amber-50">
+          <h3 class="font-bold text-amber-800">⚠ 要判断案件（遅延継続）</h3>
+        </div>
+        <div class="p-4 space-y-4">
+          <div class="p-4 bg-red-50 border border-red-200 rounded-lg">
+            <div class="flex items-start justify-between">
+              <div>
+                <p class="font-bold text-blue-800">HN-000234</p>
+                <p class="text-sm text-gray-600">鈴木 次郎</p>
+                <p class="text-sm text-gray-500">W-000120 第3回支払・期日：2026/01/20</p>
+                <p class="text-sm text-red-600 font-medium mt-1">⚠ 11日遅延・無連絡</p>
+              </div>
+              <div class="text-right">
+                <p class="text-sm text-gray-500">未払残額</p>
+                <p class="text-xl font-bold text-red-600">¥60,000</p>
+              </div>
+            </div>
+            <div class="mt-3 flex gap-2">
+              <button class="px-3 py-1 bg-amber-500 hover:bg-amber-600 text-white rounded text-sm">催告検討</button>
+              <button class="px-3 py-1 bg-red-500 hover:bg-red-600 text-white rounded text-sm">不履行判断</button>
+              <button class="px-3 py-1 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded text-sm">HDB確認</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 発信者別和解詳細 -->
+      <div class="bg-white rounded-xl shadow-md overflow-hidden">
+        <div class="p-4 border-b border-gray-100">
+          <h3 class="font-bold text-gray-800">発信者別和解詳細</h3>
+        </div>
+        <div class="p-6">
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 p-4 bg-gray-50 rounded-lg">
+            <div>
+              <p class="text-xs text-gray-500">発信者ID</p>
+              <p class="font-bold text-blue-800">HN-000456</p>
+            </div>
+            <div>
+              <p class="text-xs text-gray-500">氏名</p>
+              <p class="font-bold">山田 太郎</p>
+            </div>
+            <div>
+              <p class="text-xs text-gray-500">支払方法</p>
+              <p class="font-bold">分割（5回）</p>
+            </div>
+            <div>
+              <p class="text-xs text-gray-500">残額</p>
+              <p class="font-bold">¥60,000</p>
+            </div>
+          </div>
+
+          <div class="mb-4">
+            <div class="flex justify-between text-sm mb-1">
+              <span>入金進捗</span>
+              <span class="font-medium">2/5回</span>
+            </div>
+            <div class="w-full bg-gray-200 rounded-full h-3">
+              <div class="bg-blue-600 h-3 rounded-full" style="width: 40%"></div>
+            </div>
+          </div>
+
+          <table class="w-full">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500">回</th>
+                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500">期日</th>
+                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500">金額</th>
+                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500">状態</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+              <tr>
+                <td class="px-4 py-2 text-sm">1</td>
+                <td class="px-4 py-2 text-sm">2026/02/01</td>
+                <td class="px-4 py-2 text-sm">¥20,000</td>
+                <td class="px-4 py-2"><span class="status-paid px-2 py-1 rounded text-xs">🟢 入金済</span></td>
+              </tr>
+              <tr>
+                <td class="px-4 py-2 text-sm">2</td>
+                <td class="px-4 py-2 text-sm">2026/03/01</td>
+                <td class="px-4 py-2 text-sm">¥20,000</td>
+                <td class="px-4 py-2"><span class="status-paid px-2 py-1 rounded text-xs">🟢 入金済</span></td>
+              </tr>
+              <tr>
+                <td class="px-4 py-2 text-sm">3</td>
+                <td class="px-4 py-2 text-sm">2026/04/01</td>
+                <td class="px-4 py-2 text-sm">¥20,000</td>
+                <td class="px-4 py-2"><span class="status-pending px-2 py-1 rounded text-xs">⚪ 未入金</span></td>
+              </tr>
+              <tr>
+                <td class="px-4 py-2 text-sm">4</td>
+                <td class="px-4 py-2 text-sm">2026/05/01</td>
+                <td class="px-4 py-2 text-sm">¥20,000</td>
+                <td class="px-4 py-2"><span class="status-pending px-2 py-1 rounded text-xs">⚪ 未入金</span></td>
+              </tr>
+              <tr>
+                <td class="px-4 py-2 text-sm">5</td>
+                <td class="px-4 py-2 text-sm">2026/06/01</td>
+                <td class="px-4 py-2 text-sm">¥20,000</td>
+                <td class="px-4 py-2"><span class="status-pending px-2 py-1 rounded text-xs">⚪ 未入金</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- ロールD: 経理・支払担当UI -->
+  <!-- ========================================== -->
+  <div id="role-d-screen" class="hidden min-h-screen">
+    <header class="bg-purple-600 text-white shadow-lg">
+      <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <span class="role-badge bg-white/20 text-white">ロールD</span>
+          <h1 class="text-lg font-bold">経理／支払担当</h1>
+        </div>
+        <button onclick="backToRoleSelect()" class="text-purple-100 hover:text-white text-sm flex items-center gap-1">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 17l-5-5m0 0l5-5m-5 5h12"></path>
+          </svg>
+          ロール選択に戻る
+        </button>
+      </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 py-6">
+      <!-- 本人対応サマリー（メイン機能） -->
+      <div class="bg-white rounded-xl shadow-md overflow-hidden mb-6">
+        <div class="p-4 border-b border-gray-100 bg-purple-50">
+          <h3 class="font-bold text-gray-800">本人対応用クイック確認</h3>
+          <p class="text-sm text-gray-500">電話対応時に即座に回答（発信者ID単位）</p>
+        </div>
+        <div class="p-6">
+          <div class="flex gap-4 mb-4">
+            <input type="text" id="role-d-search" placeholder="発信者ID or 氏名（HN-000000 / 山田）"
+              class="flex-1 px-4 py-2 border border-gray-300 rounded-lg form-input"
+              onkeypress="if(event.key==='Enter') searchForRoleD()">
+            <button onclick="searchForRoleD()" class="elegant-btn text-white px-6 py-2 rounded-lg">検索</button>
+          </div>
+
+          <!-- 検索結果（発信者ID単位） -->
+          <div id="role-d-result" class="hidden">
+            <!-- 動的に生成 -->
+          </div>
+          <div id="role-d-no-result" class="hidden p-4 bg-gray-100 text-gray-600 rounded-lg text-center">
+            該当する発信者が見つかりませんでした
+          </div>
+        </div>
+      </div>
+
+      <!-- 権利者別集計 -->
+      <div class="bg-white rounded-xl shadow-md overflow-hidden mb-6">
+        <div class="p-4 border-b border-gray-100 flex items-center justify-between">
+          <h3 class="font-bold text-gray-800">権利者別集計</h3>
+          <button onclick="exportHolderStats()" class="elegant-btn text-white px-4 py-2 rounded-lg text-sm">レポート出力</button>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">権利者</th>
+                <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">案件数</th>
+                <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">進行中</th>
+                <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">遅延</th>
+                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">合計額</th>
+                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">入金済</th>
+                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">今月入金</th>
+                <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">詳細</th>
+              </tr>
+            </thead>
+            <tbody id="holder-stats-tbody" class="divide-y divide-gray-100">
+              <!-- 動的に生成 -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- フローティング: 機能リクエスト・バグ報告 -->
+  <!-- ========================================== -->
+  <div class="fixed bottom-4 right-4 z-40">
+    <button onclick="openRequestModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white rounded-full p-4 shadow-lg flex items-center gap-2">
+      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path>
+      </svg>
+      <span class="hidden sm:inline">リクエスト・報告</span>
+    </button>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- モーダル: 機能リクエスト・バグ報告 -->
+  <!-- ========================================== -->
+  <div id="request-modal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden">
+      <div class="bg-indigo-600 text-white px-6 py-4">
+        <h3 class="text-lg font-bold">機能リクエスト・バグ報告</h3>
+        <p class="text-indigo-200 text-sm">改善のご意見をお聞かせください</p>
+      </div>
+      <div class="p-6">
+        <form id="request-form" class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">種別 <span class="text-red-500">*</span></label>
+            <div class="flex gap-4">
+              <label class="flex items-center gap-2">
+                <input type="radio" name="request-type" value="feature" checked class="text-indigo-600">
+                <span>機能追加</span>
+              </label>
+              <label class="flex items-center gap-2">
+                <input type="radio" name="request-type" value="improvement" class="text-indigo-600">
+                <span>改善要望</span>
+              </label>
+              <label class="flex items-center gap-2">
+                <input type="radio" name="request-type" value="bug" class="text-indigo-600">
+                <span>バグ報告</span>
+              </label>
+            </div>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">対象画面</label>
+            <select id="request-screen" class="w-full px-3 py-2 border border-gray-300 rounded-lg form-input">
+              <option value="">選択してください</option>
+              <option value="role-a">ロールA（入金確認担当）</option>
+              <option value="role-b">ロールB（管理者）</option>
+              <option value="role-c">ロールC（弁護士）</option>
+              <option value="role-d">ロールD（経理）</option>
+              <option value="other">その他・全体</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">タイトル <span class="text-red-500">*</span></label>
+            <input type="text" id="request-title" class="w-full px-3 py-2 border border-gray-300 rounded-lg form-input" placeholder="簡潔に内容を入力">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">詳細説明</label>
+            <textarea id="request-detail" rows="4" class="w-full px-3 py-2 border border-gray-300 rounded-lg form-input" placeholder="具体的な状況や希望する動作を記入してください"></textarea>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">優先度</label>
+            <select id="request-priority" class="w-full px-3 py-2 border border-gray-300 rounded-lg form-input">
+              <option value="low">低（時間があれば）</option>
+              <option value="medium" selected>中（通常）</option>
+              <option value="high">高（業務に支障）</option>
+              <option value="critical">緊急（業務停止）</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">報告者名</label>
+            <input type="text" id="request-reporter" class="w-full px-3 py-2 border border-gray-300 rounded-lg form-input" placeholder="お名前（任意）">
+          </div>
+        </form>
+        <div class="flex gap-3 mt-6">
+          <button onclick="closeRequestModal()" class="flex-1 px-4 py-3 bg-gray-200 hover:bg-gray-300 rounded-lg font-medium">
+            キャンセル
+          </button>
+          <button onclick="submitRequest()" class="flex-1 px-4 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium">
+            送信
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- モーダル: 催促記録 -->
+  <!-- ========================================== -->
+  <div id="reminder-modal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+      <div class="bg-orange-500 text-white px-6 py-4">
+        <h3 class="text-lg font-bold">催促記録</h3>
+        <p id="reminder-target" class="text-orange-100 text-sm">対象者情報</p>
+      </div>
+      <div class="p-6">
+        <form id="reminder-form" class="space-y-4">
+          <input type="hidden" id="reminder-wid">
+          <input type="hidden" id="reminder-schedule-no">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">催促方法 <span class="text-red-500">*</span></label>
+            <select id="reminder-type" class="w-full px-3 py-2 border border-gray-300 rounded-lg form-input">
+              <option value="電話">電話</option>
+              <option value="SMS">SMS</option>
+              <option value="郵送">郵送（督促状）</option>
+              <option value="弁護士連絡">弁護士への連絡</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">結果・メモ <span class="text-red-500">*</span></label>
+            <textarea id="reminder-note" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg form-input" placeholder="通話結果や相手の反応など"></textarea>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">担当者</label>
+            <input type="text" id="reminder-user" class="w-full px-3 py-2 border border-gray-300 rounded-lg form-input" placeholder="お名前">
+          </div>
+        </form>
+
+        <!-- 過去の催促履歴 -->
+        <div class="mt-4 pt-4 border-t border-gray-200">
+          <h4 class="text-sm font-medium text-gray-700 mb-2">過去の催促履歴</h4>
+          <div id="reminder-history" class="max-h-32 overflow-y-auto text-sm">
+            <!-- 動的に生成 -->
+          </div>
+        </div>
+
+        <div class="flex gap-3 mt-6">
+          <button onclick="closeReminderModal()" class="flex-1 px-4 py-3 bg-gray-200 hover:bg-gray-300 rounded-lg font-medium">
+            キャンセル
+          </button>
+          <button onclick="submitReminder()" class="flex-1 px-4 py-3 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-medium">
+            記録する
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- モーダル: PayPay銀行CSVインポート -->
+  <!-- ========================================== -->
+  <div id="import-modal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl mx-4 overflow-hidden">
+      <div class="bg-green-600 text-white px-6 py-4">
+        <h3 class="text-lg font-bold">PayPay銀行 CSVインポート</h3>
+        <p class="text-green-100 text-sm">入出金明細CSVをインポートして入金データを取り込みます</p>
+      </div>
+      <div class="p-6">
+        <!-- ファイル選択 -->
+        <div class="mb-6">
+          <label class="block text-sm font-medium text-gray-700 mb-2">CSVファイルを選択</label>
+          <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-green-400 transition cursor-pointer" onclick="document.getElementById('csv-file-input').click()">
+            <svg class="w-12 h-12 mx-auto text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+            </svg>
+            <p class="text-gray-600">クリックしてファイルを選択</p>
+            <p class="text-xs text-gray-400 mt-1">または、ここにドラッグ＆ドロップ</p>
+            <input type="file" id="csv-file-input" accept=".csv" class="hidden" onchange="handleCsvFile(this)">
+          </div>
+          <p id="selected-file-name" class="text-sm text-green-600 mt-2 hidden"></p>
+        </div>
+
+        <!-- CSVフォーマット説明 -->
+        <div class="mb-6 p-4 bg-gray-50 rounded-lg">
+          <h4 class="font-medium text-gray-800 mb-2">📋 対応フォーマット（PayPay銀行 入出金明細）</h4>
+          <p class="text-sm text-gray-600 mb-2">以下の列を含むCSVファイルに対応しています：</p>
+          <div class="text-xs text-gray-500 font-mono bg-white p-2 rounded border">
+            日付,時刻,取引内容,入金額,出金額,残高,振込依頼人名
+          </div>
+          <p class="text-xs text-gray-400 mt-2">※入金額が0より大きい行のみ取り込まれます</p>
+        </div>
+
+        <!-- プレビュー領域 -->
+        <div id="import-preview" class="hidden mb-6">
+          <h4 class="font-medium text-gray-800 mb-2">📥 インポートプレビュー</h4>
+          <div class="max-h-48 overflow-y-auto border rounded-lg">
+            <table class="w-full text-sm">
+              <thead class="bg-gray-100 sticky top-0">
+                <tr>
+                  <th class="px-3 py-2 text-left">日付</th>
+                  <th class="px-3 py-2 text-left">時刻</th>
+                  <th class="px-3 py-2 text-right">入金額</th>
+                  <th class="px-3 py-2 text-left">振込依頼人</th>
+                  <th class="px-3 py-2 text-center">状態</th>
+                </tr>
+              </thead>
+              <tbody id="import-preview-tbody">
+                <!-- 動的に生成 -->
+              </tbody>
+            </table>
+          </div>
+          <p id="import-summary" class="text-sm text-gray-600 mt-2"></p>
+        </div>
+
+        <!-- ボタン -->
+        <div class="flex gap-3">
+          <button onclick="closeImportModal()" class="flex-1 px-4 py-3 bg-gray-200 hover:bg-gray-300 rounded-lg font-medium">
+            キャンセル
+          </button>
+          <button id="import-btn" onclick="executeImport()" disabled class="flex-1 px-4 py-3 bg-gray-300 text-gray-500 rounded-lg font-medium cursor-not-allowed">
+            インポート実行
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- モーダル: 例外入金登録 -->
+  <!-- ========================================== -->
+  <div id="exception-modal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+      <div class="bg-amber-500 text-white px-6 py-4">
+        <h3 class="text-lg font-bold">例外入金登録</h3>
+        <p class="text-amber-100 text-sm">現金・その他の入金（要承認）</p>
+      </div>
+      <div class="p-6">
+        <div class="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+          <p class="text-sm text-amber-800">⚠ この登録は管理者の承認が必要です</p>
+        </div>
+        <form class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">発信者ID</label>
+            <input type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg form-input" placeholder="HN-000000">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">入金日</label>
+            <input type="date" class="w-full px-3 py-2 border border-gray-300 rounded-lg form-input">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">入金額</label>
+            <input type="number" class="w-full px-3 py-2 border border-gray-300 rounded-lg form-input" placeholder="20000">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">入金経路</label>
+            <select class="w-full px-3 py-2 border border-gray-300 rounded-lg form-input">
+              <option value="CASH">現金持参</option>
+              <option value="OTHER">その他</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">受領者</label>
+            <input type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg form-input" placeholder="田中">
+          </div>
+        </form>
+        <div class="flex gap-3 mt-6">
+          <button onclick="closeExceptionModal()" class="flex-1 px-4 py-3 bg-gray-200 hover:bg-gray-300 rounded-lg font-medium">
+            キャンセル
+          </button>
+          <button onclick="submitException()" class="flex-1 px-4 py-3 bg-amber-500 hover:bg-amber-600 text-white rounded-lg font-medium">
+            承認申請
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ===================================================
+    // HDBからの発信者データ（連携用）
+    // ===================================================
+    const personData = {
+      'HN-000456': {
+        hn: 'HN-000456',
+        name: '山田 太郎',
+        nameKana: 'ヤマダ タロウ',
+        phone: '090-1234-5678',
+        address: '東京都新宿区西新宿1-1-1',
+        hasLawyer: false,
+        lawyerCode: null,
+        lawyerName: null,
+        settlement: '和解成立',
+        linkedIpns: ['IPN-003'],
+      },
+      'HN-000789': {
+        hn: 'HN-000789',
+        name: '田中 花子',
+        nameKana: 'タナカ ハナコ',
+        phone: '080-9876-5432',
+        address: '大阪府大阪市北区梅田2-2-2',
+        hasLawyer: true,
+        lawyerCode: 'ST',
+        lawyerName: '佐藤 花子（佐藤法律事務所）',
+        settlement: '和解成立',
+        linkedIpns: ['IPN-001', 'IPN-002'],
+      },
+      'HN-000234': {
+        hn: 'HN-000234',
+        name: '鈴木 次郎',
+        nameKana: 'スズキ ジロウ',
+        phone: '070-1111-2222',
+        address: '愛知県名古屋市中区栄3-3-3',
+        hasLawyer: true,
+        lawyerCode: 'YM',
+        lawyerName: '山本 太郎（山本・鈴木法律事務所）',
+        settlement: '分割中',
+        linkedIpns: ['IPN-006'],
+      },
+      'HN-000567': {
+        hn: 'HN-000567',
+        name: '佐藤 三郎',
+        nameKana: 'サトウ サブロウ',
+        phone: '090-3333-4444',
+        address: '福岡県福岡市博多区博多駅前4-4-4',
+        hasLawyer: false,
+        lawyerCode: null,
+        lawyerName: null,
+        settlement: '分割中',
+        linkedIpns: [],
+      },
+      'HN-000890': {
+        hn: 'HN-000890',
+        name: '高橋 四郎',
+        nameKana: 'タカハシ シロウ',
+        phone: '080-5555-6666',
+        address: '北海道札幌市中央区大通5-5-5',
+        hasLawyer: false,
+        lawyerCode: null,
+        lawyerName: null,
+        settlement: '一括済',
+        linkedIpns: [],
+      },
+    };
+
+    // ===================================================
+    // 権利者マスター
+    // ===================================================
+    const holderMaster = {
+      'A': { code: 'A', name: '〇〇株式会社', bankName: 'みずほ銀行', bankBranch: '本店', accountType: '普通', accountNumber: '1234567' },
+      'B': { code: 'B', name: '△△株式会社', bankName: '三菱UFJ銀行', bankBranch: '東京営業部', accountType: '普通', accountNumber: '7654321' },
+      'C': { code: 'C', name: '□□株式会社', bankName: '三井住友銀行', bankBranch: '大阪本店', accountType: '普通', accountNumber: '1111222' },
+    };
+
+    // ===================================================
+    // 和解データ（WDBのコアデータ）
+    // ===================================================
+    const settlementData = {
+      'W-000123': {
+        wid: 'W-000123',
+        hn: 'HN-000456',           // 発信者IDでHDBと連携
+        holderCode: 'A',           // 権利者
+        agreementDate: '2025/12/15', // 和解成立日
+        totalAmount: 100000,       // 和解金額合計
+        paymentType: '分割',       // 一括 or 分割
+        installments: 5,           // 分割回数
+        status: '履行中',          // 履行中, 完了, 不履行, 遅延中
+        schedule: [
+          { no: 1, dueDate: '2026/01/31', amount: 20000, status: '入金済', paidDate: '2026/01/30', paidAmount: 20000 },
+          { no: 2, dueDate: '2026/02/28', amount: 20000, status: '未入金', paidDate: null, paidAmount: 0 },
+          { no: 3, dueDate: '2026/03/31', amount: 20000, status: '未入金', paidDate: null, paidAmount: 0 },
+          { no: 4, dueDate: '2026/04/30', amount: 20000, status: '未入金', paidDate: null, paidAmount: 0 },
+          { no: 5, dueDate: '2026/05/31', amount: 20000, status: '未入金', paidDate: null, paidAmount: 0 },
+        ],
+        note: '',
+      },
+      'W-000124': {
+        wid: 'W-000124',
+        hn: 'HN-000789',
+        holderCode: 'B',
+        agreementDate: '2026/01/10',
+        totalAmount: 50000,
+        paymentType: '一括',
+        installments: 1,
+        status: '履行中',
+        schedule: [
+          { no: 1, dueDate: '2026/01/31', amount: 50000, status: '未入金', paidDate: null, paidAmount: 0 },
+        ],
+        note: '弁護士経由',
+      },
+      'W-000120': {
+        wid: 'W-000120',
+        hn: 'HN-000234',
+        holderCode: 'A',
+        agreementDate: '2025/10/01',
+        totalAmount: 100000,
+        paymentType: '分割',
+        installments: 5,
+        status: '遅延中',
+        schedule: [
+          { no: 1, dueDate: '2025/11/20', amount: 20000, status: '入金済', paidDate: '2025/11/18', paidAmount: 20000 },
+          { no: 2, dueDate: '2025/12/20', amount: 20000, status: '入金済', paidDate: '2025/12/20', paidAmount: 20000 },
+          { no: 3, dueDate: '2026/01/20', amount: 20000, status: '遅延', paidDate: null, paidAmount: 0 },
+          { no: 4, dueDate: '2026/02/20', amount: 20000, status: '未入金', paidDate: null, paidAmount: 0 },
+          { no: 5, dueDate: '2026/03/20', amount: 20000, status: '未入金', paidDate: null, paidAmount: 0 },
+        ],
+        note: '3回目遅延中',
+      },
+      'W-000118': {
+        wid: 'W-000118',
+        hn: 'HN-000567',
+        holderCode: 'C',
+        agreementDate: '2025/11/15',
+        totalAmount: 90000,
+        paymentType: '分割',
+        installments: 3,
+        status: '遅延中',
+        schedule: [
+          { no: 1, dueDate: '2025/12/25', amount: 30000, status: '入金済', paidDate: '2025/12/24', paidAmount: 30000 },
+          { no: 2, dueDate: '2026/01/25', amount: 30000, status: '遅延', paidDate: null, paidAmount: 0 },
+          { no: 3, dueDate: '2026/02/25', amount: 30000, status: '未入金', paidDate: null, paidAmount: 0 },
+        ],
+        note: '',
+      },
+    };
+
+    // ===================================================
+    // 弁護士マスター（HDBと共有）
+    // ===================================================
+    const lawyerMaster = {
+      'TN': { code: 'TN', name: '田中 一郎', office: '田中法律事務所', phone: '03-1234-5678' },
+      'ST': { code: 'ST', name: '佐藤 花子', office: '佐藤法律事務所', phone: '03-2345-6789' },
+      'YM': { code: 'YM', name: '山本 太郎', office: '山本・鈴木法律事務所', phone: '03-3456-7890' },
+      'SK': { code: 'SK', name: '鈴木 次郎', office: '鈴木総合法律事務所', phone: '06-1111-2222' },
+      'WD': { code: 'WD', name: '渡辺 三郎', office: '渡辺法律事務所', phone: '052-333-4444' },
+    };
+
+    function getLawyerByCode(code) {
+      if (!code) return null;
+      return lawyerMaster[code.toUpperCase()] || null;
+    }
+
+    // ===================================================
+    // 催促履歴データ
+    // ===================================================
+    const reminderHistory = [
+      { id: 'REM-001', wid: 'W-000120', scheduleNo: 3, type: '電話', date: '2026/01/22', note: '不在、折返し依頼', user: '田中' },
+      { id: 'REM-002', wid: 'W-000120', scheduleNo: 3, type: '電話', date: '2026/01/25', note: '不在、留守電', user: '田中' },
+      { id: 'REM-003', wid: 'W-000118', scheduleNo: 2, type: '電話', date: '2026/01/27', note: '来月まとめて払うと回答', user: '鈴木' },
+    ];
+
+    // ===================================================
+    // 銀行入金データ（PayPay銀行APIからの取得想定）
+    // ===================================================
+    const bankDeposits = [
+      { id: 'DEP-001', date: '2026/01/31', time: '09:15', amount: 20000, senderName: 'ヤマダ タロウ', matched: false, matchedTo: null },
+      { id: 'DEP-002', date: '2026/01/31', time: '10:30', amount: 50000, senderName: 'タナカ ハナコ', matched: false, matchedTo: null },
+      { id: 'DEP-003', date: '2026/01/31', time: '11:45', amount: 20000, senderName: 'スズキ ジロウ', matched: false, matchedTo: null },
+      { id: 'DEP-004', date: '2026/01/30', time: '14:20', amount: 20000, senderName: 'ヤマダ タロウ', matched: true, matchedTo: 'W-000123' },
+    ];
+
+    // ===================================================
+    // 入金照合申請データ（登録→承認の2段階）
+    // status: 承認待ち, 承認済み, 差戻し
+    // ===================================================
+    const matchRequests = [
+      {
+        id: 'MR-001',
+        depositId: 'DEP-004',
+        wid: 'W-000123',
+        scheduleNo: 1,
+        type: '通常',
+        amount: 20000,
+        registeredAt: '2026/01/30 15:00',
+        registeredBy: '田中',
+        status: '承認済み',
+        approvedAt: '2026/01/30 16:30',
+        approvedBy: '鈴木',
+        note: ''
+      },
+      {
+        id: 'MR-002',
+        depositId: 'DEP-001',
+        wid: 'W-000123',
+        scheduleNo: 2,
+        type: '通常',
+        amount: 20000,
+        registeredAt: '2026/01/31 09:30',
+        registeredBy: '田中',
+        status: '承認待ち',
+        approvedAt: null,
+        approvedBy: null,
+        note: ''
+      },
+    ];
+
+    // ===================================================
+    // 例外入金申請データ（登録→承認の2段階）
+    // ===================================================
+    const exceptionPayments = [
+      {
+        id: 'EXC-001',
+        hn: 'HN-000890',
+        wid: null,
+        scheduleNo: null,
+        date: '2026/01/30',
+        amount: 10000,
+        method: '現金',
+        receiver: '田中',
+        registeredAt: '2026/01/30 14:00',
+        registeredBy: '鈴木',
+        status: '承認待ち',
+        approvedAt: null,
+        approvedBy: null,
+        note: '来社時に現金支払い'
+      },
+    ];
+
+    // ===================================================
+    // ヘルパー関数
+    // ===================================================
+
+    // 発信者IDから和解データを取得
+    function getSettlementsByHn(hn) {
+      return Object.values(settlementData).filter(s => s.hn === hn);
+    }
+
+    // 発信者IDから人物情報を取得
+    function getPersonByHn(hn) {
+      return personData[hn] || null;
+    }
+
+    // 名前（カナ）で発信者を検索
+    function searchPersonByName(query) {
+      const normalizedQuery = query.replace(/[\s　]/g, '').toLowerCase();
+      const results = [];
+      for (const hn in personData) {
+        const person = personData[hn];
+        const normalizedName = person.name.replace(/[\s　]/g, '').toLowerCase();
+        const normalizedKana = person.nameKana.replace(/[\s　]/g, '').toLowerCase();
+        if (normalizedName.includes(normalizedQuery) || normalizedKana.includes(normalizedQuery) ||
+            hn.toLowerCase().includes(normalizedQuery)) {
+          results.push(person);
+        }
+      }
+      return results;
+    }
+
+    // 銀行入金と和解スケジュールをマッチング候補を取得
+    function findMatchCandidates(deposit) {
+      const candidates = [];
+      const depositName = deposit.senderName.replace(/[\s　]/g, '').toLowerCase();
+
+      for (const wid in settlementData) {
+        const settlement = settlementData[wid];
+        const person = getPersonByHn(settlement.hn);
+        if (!person) continue;
+
+        const personKana = person.nameKana.replace(/[\s　]/g, '').toLowerCase();
+
+        // 名前マッチング
+        const nameMatch = depositName === personKana;
+
+        // 未入金のスケジュールを探す
+        for (const sched of settlement.schedule) {
+          if (sched.status === '未入金' || sched.status === '遅延') {
+            const amountMatch = sched.amount === deposit.amount;
+            if (nameMatch || amountMatch) {
+              candidates.push({
+                settlement,
+                person,
+                schedule: sched,
+                nameMatch,
+                amountMatch,
+                score: (nameMatch ? 50 : 0) + (amountMatch ? 50 : 0)
+              });
+            }
+          }
+        }
+      }
+
+      return candidates.sort((a, b) => b.score - a.score);
+    }
+
+    // 和解の残額を計算
+    function getRemainingAmount(settlement) {
+      return settlement.schedule
+        .filter(s => s.status !== '入金済')
+        .reduce((sum, s) => sum + s.amount, 0);
+    }
+
+    // 和解の入金済額を計算
+    function getPaidAmount(settlement) {
+      return settlement.schedule
+        .filter(s => s.status === '入金済')
+        .reduce((sum, s) => sum + s.paidAmount, 0);
+    }
+
+    // 本日の入金予定を取得
+    function getTodaySchedules() {
+      const today = new Date().toISOString().slice(0, 10).replace(/-/g, '/');
+      const results = [];
+      for (const wid in settlementData) {
+        const settlement = settlementData[wid];
+        for (const sched of settlement.schedule) {
+          if (sched.dueDate === today && sched.status !== '入金済') {
+            results.push({ settlement, schedule: sched, person: getPersonByHn(settlement.hn) });
+          }
+        }
+      }
+      return results;
+    }
+
+    // 期限超過を取得
+    function getOverdueSchedules() {
+      const today = new Date();
+      const results = [];
+      for (const wid in settlementData) {
+        const settlement = settlementData[wid];
+        for (const sched of settlement.schedule) {
+          if (sched.status === '未入金' || sched.status === '遅延') {
+            const dueDate = new Date(sched.dueDate.replace(/\//g, '-'));
+            if (dueDate < today) {
+              const diffDays = Math.floor((today - dueDate) / (1000 * 60 * 60 * 24));
+              results.push({
+                settlement,
+                schedule: sched,
+                person: getPersonByHn(settlement.hn),
+                daysOverdue: diffDays
+              });
+            }
+          }
+        }
+      }
+      return results.sort((a, b) => b.daysOverdue - a.daysOverdue);
+    }
+
+    // 未照合入金数を取得
+    function getUnmatchedDepositsCount() {
+      return bankDeposits.filter(d => !d.matched).length;
+    }
+
+    // ===================================================
+    // 集計機能
+    // ===================================================
+
+    // 弁護士別集計
+    function getStatsByLawyer() {
+      const stats = {};
+
+      for (const wid in settlementData) {
+        const settlement = settlementData[wid];
+        const person = getPersonByHn(settlement.hn);
+        if (!person || !person.hasLawyer || !person.lawyerCode) continue;
+
+        const code = person.lawyerCode;
+        if (!stats[code]) {
+          const lawyer = getLawyerByCode(code);
+          stats[code] = {
+            code,
+            name: lawyer ? lawyer.name : code,
+            office: lawyer ? lawyer.office : '',
+            totalCases: 0,
+            activeCases: 0,
+            overdueCases: 0,
+            totalAmount: 0,
+            paidAmount: 0,
+            remainingAmount: 0,
+            settlements: []
+          };
+        }
+
+        stats[code].totalCases++;
+        stats[code].totalAmount += settlement.totalAmount;
+        stats[code].paidAmount += getPaidAmount(settlement);
+        stats[code].remainingAmount += getRemainingAmount(settlement);
+        stats[code].settlements.push(settlement);
+
+        if (settlement.status === '履行中' || settlement.status === '遅延中') {
+          stats[code].activeCases++;
+        }
+        if (settlement.status === '遅延中') {
+          stats[code].overdueCases++;
+        }
+      }
+
+      return Object.values(stats).sort((a, b) => b.totalCases - a.totalCases);
+    }
+
+    // 権利者別集計
+    function getStatsByHolder() {
+      const stats = {};
+
+      for (const wid in settlementData) {
+        const settlement = settlementData[wid];
+        const code = settlement.holderCode;
+        const holder = holderMaster[code];
+
+        if (!stats[code]) {
+          stats[code] = {
+            code,
+            name: holder ? holder.name : code,
+            bankInfo: holder ? `${holder.bankName} ${holder.bankBranch}` : '',
+            totalCases: 0,
+            completedCases: 0,
+            activeCases: 0,
+            overdueCases: 0,
+            totalAmount: 0,
+            paidAmount: 0,
+            remainingAmount: 0,
+            thisMonthPaid: 0,
+            settlements: []
+          };
+        }
+
+        stats[code].totalCases++;
+        stats[code].totalAmount += settlement.totalAmount;
+        stats[code].paidAmount += getPaidAmount(settlement);
+        stats[code].remainingAmount += getRemainingAmount(settlement);
+        stats[code].settlements.push(settlement);
+
+        if (settlement.status === '完了') {
+          stats[code].completedCases++;
+        } else if (settlement.status === '履行中' || settlement.status === '遅延中') {
+          stats[code].activeCases++;
+        }
+        if (settlement.status === '遅延中') {
+          stats[code].overdueCases++;
+        }
+
+        // 今月の入金額を計算
+        const thisMonth = new Date().toISOString().slice(0, 7).replace('-', '/');
+        for (const sched of settlement.schedule) {
+          if (sched.paidDate && sched.paidDate.startsWith(thisMonth)) {
+            stats[code].thisMonthPaid += sched.paidAmount;
+          }
+        }
+      }
+
+      return Object.values(stats).sort((a, b) => b.totalCases - a.totalCases);
+    }
+
+    // 催促が必要な案件を取得
+    function getReminderNeeded() {
+      const overdueList = getOverdueSchedules();
+      const results = [];
+
+      for (const item of overdueList) {
+        // この案件の催促履歴を取得
+        const history = reminderHistory.filter(
+          r => r.wid === item.settlement.wid && r.scheduleNo === item.schedule.no
+        ).sort((a, b) => new Date(b.date) - new Date(a.date));
+
+        const lastReminder = history[0];
+        const daysSinceReminder = lastReminder
+          ? Math.floor((new Date() - new Date(lastReminder.date.replace(/\//g, '-'))) / (1000 * 60 * 60 * 24))
+          : null;
+
+        results.push({
+          ...item,
+          reminderHistory: history,
+          lastReminder,
+          daysSinceReminder,
+          needsReminder: !lastReminder || daysSinceReminder >= 3 // 3日以上経過で要催促
+        });
+      }
+
+      return results.sort((a, b) => {
+        // 要催促を優先、次に遅延日数順
+        if (a.needsReminder !== b.needsReminder) return a.needsReminder ? -1 : 1;
+        return b.daysOverdue - a.daysOverdue;
+      });
+    }
+
+    // ===================================================
+    // UI更新関数
+    // ===================================================
+
+    // ダッシュボードカードの数値更新
+    function updateDashboardCounts() {
+      // ロールAのカード
+      const unmatchedCount = getUnmatchedDepositsCount();
+      const todayCount = getTodaySchedules().length;
+      const overdueCount = getOverdueSchedules().length;
+
+      // カード内の数値を更新（セレクタで特定）
+      const cards = document.querySelectorAll('#role-a-screen .card-hover');
+      if (cards[0]) cards[0].querySelector('.text-2xl').textContent = unmatchedCount + '件';
+      if (cards[1]) cards[1].querySelector('.text-2xl').textContent = todayCount + '件';
+      if (cards[2]) cards[2].querySelector('.text-2xl').textContent = overdueCount + '件';
+    }
+
+    // ロール選択
+    function enterRole(role) {
+      document.getElementById('role-select-screen').classList.add('hidden');
+      document.getElementById('role-' + role.toLowerCase() + '-screen').classList.remove('hidden');
+    }
+
+    // ロール選択に戻る
+    function backToRoleSelect() {
+      document.querySelectorAll('[id$="-screen"]').forEach(el => el.classList.add('hidden'));
+      document.getElementById('role-select-screen').classList.remove('hidden');
+    }
+
+    // ===================================================
+    // 入金照合機能
+    // ===================================================
+
+    let selectedDeposit = null;
+    let selectedCandidate = null;
+
+    // 銀行入金リストを描画
+    function renderBankDeposits() {
+      const container = document.getElementById('bank-deposit-list');
+      if (!container) return;
+
+      const unmatchedDeposits = bankDeposits.filter(d => !d.matched);
+
+      if (unmatchedDeposits.length === 0) {
+        container.innerHTML = '<p class="text-gray-500 text-sm p-4 text-center">未照合の入金はありません</p>';
+        return;
+      }
+
+      let html = '';
+      for (const deposit of unmatchedDeposits) {
+        html += `
+          <div class="p-3 bg-green-50 border border-green-200 rounded-lg cursor-pointer hover:bg-green-100 deposit-item"
+               data-deposit-id="${deposit.id}" onclick="selectBankEntry('${deposit.id}')">
+            <div class="flex justify-between items-start">
+              <div>
+                <p class="font-medium">¥${deposit.amount.toLocaleString()}</p>
+                <p class="text-sm text-gray-600">${deposit.senderName}</p>
+                <p class="text-xs text-gray-500">${deposit.date} ${deposit.time}</p>
+              </div>
+              <span class="px-2 py-1 bg-yellow-100 text-yellow-700 rounded text-xs">未照合</span>
+            </div>
+          </div>
+        `;
+      }
+      container.innerHTML = html;
+    }
+
+    // 銀行入金選択
+    function selectBankEntry(depositId) {
+      const deposit = bankDeposits.find(d => d.id === depositId);
+      if (!deposit) return;
+
+      selectedDeposit = deposit;
+      selectedCandidate = null;
+
+      // 選択状態の更新
+      document.querySelectorAll('.deposit-item').forEach(el => {
+        el.classList.remove('ring-2', 'ring-blue-500');
+      });
+      document.querySelector(`[data-deposit-id="${depositId}"]`)?.classList.add('ring-2', 'ring-blue-500');
+
+      // マッチング候補を表示
+      renderMatchCandidates(deposit);
+
+      // ボタンをリセット
+      updateMatchButton();
+    }
+
+    // マッチング候補を描画
+    function renderMatchCandidates(deposit) {
+      const container = document.getElementById('match-candidate-list');
+      if (!container) return;
+
+      const candidates = findMatchCandidates(deposit);
+
+      if (candidates.length === 0) {
+        container.innerHTML = `
+          <div class="p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-center">
+            <p class="text-yellow-700 font-medium">⚠ 候補が見つかりません</p>
+            <p class="text-sm text-yellow-600 mt-1">名前・金額が一致する和解スケジュールがありません</p>
+          </div>
+        `;
+        return;
+      }
+
+      let html = '';
+      for (const candidate of candidates) {
+        const matchBadges = [];
+        if (candidate.nameMatch) matchBadges.push('<span class="px-2 py-1 bg-green-100 text-green-700 rounded text-xs">名前一致</span>');
+        if (candidate.amountMatch) matchBadges.push('<span class="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs">金額一致</span>');
+
+        const bgClass = candidate.score === 100 ? 'bg-green-50 border-green-300' : 'bg-white border-gray-200';
+
+        html += `
+          <div class="p-3 ${bgClass} border rounded-lg cursor-pointer hover:bg-blue-50 candidate-item"
+               data-wid="${candidate.settlement.wid}" data-no="${candidate.schedule.no}"
+               onclick="selectCandidate('${candidate.settlement.wid}', ${candidate.schedule.no})">
+            <div class="flex justify-between items-start">
+              <div>
+                <p class="font-bold text-blue-800">${candidate.person.hn}</p>
+                <p class="text-sm text-gray-600">${candidate.person.name}</p>
+                <p class="text-xs text-gray-500">${candidate.settlement.wid} 第${candidate.schedule.no}回：¥${candidate.schedule.amount.toLocaleString()}</p>
+                <p class="text-xs text-gray-400">期日：${candidate.schedule.dueDate}</p>
+              </div>
+              <div class="flex flex-col gap-1">
+                ${matchBadges.join('')}
+              </div>
+            </div>
+          </div>
+        `;
+      }
+      container.innerHTML = html;
+    }
+
+    // マッチング候補選択
+    function selectCandidate(wid, scheduleNo) {
+      selectedCandidate = { wid, scheduleNo };
+
+      // 選択状態の更新
+      document.querySelectorAll('.candidate-item').forEach(el => {
+        el.classList.remove('ring-2', 'ring-green-500');
+      });
+      document.querySelector(`[data-wid="${wid}"][data-no="${scheduleNo}"]`)?.classList.add('ring-2', 'ring-green-500');
+
+      // ボタンを有効化
+      updateMatchButton();
+    }
+
+    // 照合ボタンの状態更新
+    function updateMatchButton() {
+      const btn = document.getElementById('confirm-match-btn');
+      if (!btn) return;
+
+      if (selectedDeposit && selectedCandidate) {
+        btn.disabled = false;
+        btn.className = 'w-full elegant-btn text-white py-3 rounded-lg font-medium cursor-pointer';
+        btn.textContent = '選択した入金を登録する（承認待ち）';
+      } else {
+        btn.disabled = true;
+        btn.className = 'w-full bg-gray-300 text-gray-500 py-3 rounded-lg font-medium cursor-not-allowed';
+        btn.textContent = '照合する入金と候補を選択してください';
+      }
+    }
+
+    // 照合登録（承認待ちとして登録、確定は別担当者が行う）
+    function confirmMatch() {
+      if (!selectedDeposit || !selectedCandidate) {
+        alert('入金と照合先を選択してください');
+        return;
+      }
+
+      const settlement = settlementData[selectedCandidate.wid];
+      const schedule = settlement.schedule.find(s => s.no === selectedCandidate.scheduleNo);
+      const person = getPersonByHn(settlement.hn);
+
+      const registrar = prompt('登録者名を入力してください:');
+      if (!registrar) return;
+
+      if (confirm(`以下の照合を【登録】しますか？\n\n【銀行入金】\n${selectedDeposit.senderName} ¥${selectedDeposit.amount.toLocaleString()}\n\n【照合先】\n${person.name}（${person.hn}）\n${selectedCandidate.wid} 第${selectedCandidate.scheduleNo}回\n\n※ 登録後、別の担当者が承認を行います`)) {
+        // 承認待ちとして登録
+        const newRequest = {
+          id: 'MR-' + String(matchRequests.length + 1).padStart(3, '0'),
+          depositId: selectedDeposit.id,
+          wid: selectedCandidate.wid,
+          scheduleNo: selectedCandidate.scheduleNo,
+          type: '通常',
+          amount: selectedDeposit.amount,
+          registeredAt: new Date().toLocaleString('ja-JP').replace(/\//g, '/'),
+          registeredBy: registrar,
+          status: '承認待ち',
+          approvedAt: null,
+          approvedBy: null,
+          note: ''
+        };
+
+        matchRequests.push(newRequest);
+
+        // 銀行入金を処理中にマーク（重複登録防止）
+        selectedDeposit.matched = true;
+        selectedDeposit.matchedTo = selectedCandidate.wid;
+
+        alert('照合を登録しました。\n\n別の担当者（ロールA2）で承認を行ってください。');
+
+        // 画面更新
+        selectedDeposit = null;
+        selectedCandidate = null;
+        renderBankDeposits();
+        document.getElementById('match-candidate-list').innerHTML = '<p class="text-gray-500 text-sm p-4 text-center">左の入金を選択してください</p>';
+        updateMatchButton();
+        updateDashboardCounts();
+      }
+    }
+
+    // タスク一覧表示
+    function showTaskList(type) {
+      alert(type + 'の一覧を表示（デモ）');
+    }
+
+    // ===================================================
+    // PayPay銀行CSVインポート機能
+    // ===================================================
+
+    let pendingImportData = [];
+
+    function openImportModal() {
+      document.getElementById('import-modal').classList.remove('hidden');
+      // リセット
+      document.getElementById('csv-file-input').value = '';
+      document.getElementById('selected-file-name').classList.add('hidden');
+      document.getElementById('import-preview').classList.add('hidden');
+      document.getElementById('import-btn').disabled = true;
+      document.getElementById('import-btn').className = 'flex-1 px-4 py-3 bg-gray-300 text-gray-500 rounded-lg font-medium cursor-not-allowed';
+      pendingImportData = [];
+    }
+
+    function closeImportModal() {
+      document.getElementById('import-modal').classList.add('hidden');
+      pendingImportData = [];
+    }
+
+    function handleCsvFile(input) {
+      const file = input.files[0];
+      if (!file) return;
+
+      document.getElementById('selected-file-name').textContent = '📄 ' + file.name;
+      document.getElementById('selected-file-name').classList.remove('hidden');
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        parseCsvData(e.target.result);
+      };
+      reader.readAsText(file, 'Shift_JIS'); // PayPay銀行はShift_JIS
+    }
+
+    function parseCsvData(csvText) {
+      const lines = csvText.split('\n').filter(line => line.trim());
+      if (lines.length < 2) {
+        alert('CSVファイルにデータがありません');
+        return;
+      }
+
+      // ヘッダー解析（柔軟に対応）
+      const header = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
+      const dateIdx = header.findIndex(h => h.includes('日付') || h.includes('取引日'));
+      const timeIdx = header.findIndex(h => h.includes('時刻') || h.includes('時間'));
+      const amountIdx = header.findIndex(h => h.includes('入金') || h.includes('お預り'));
+      const senderIdx = header.findIndex(h => h.includes('振込依頼人') || h.includes('摘要') || h.includes('お名前'));
+
+      if (dateIdx === -1 || amountIdx === -1) {
+        alert('CSVフォーマットを認識できません。\n日付列と入金額列が必要です。');
+        return;
+      }
+
+      pendingImportData = [];
+      const existingIds = bankDeposits.map(d => d.id);
+
+      for (let i = 1; i < lines.length; i++) {
+        const cols = lines[i].split(',').map(c => c.trim().replace(/"/g, ''));
+        if (cols.length <= amountIdx) continue;
+
+        const dateStr = cols[dateIdx] || '';
+        const timeStr = timeIdx >= 0 ? (cols[timeIdx] || '00:00') : '00:00';
+        const amountStr = cols[amountIdx] || '0';
+        const sender = senderIdx >= 0 ? (cols[senderIdx] || '') : '';
+
+        // 入金額をパース（カンマ除去、数値化）
+        const amount = parseInt(amountStr.replace(/,/g, ''), 10);
+        if (isNaN(amount) || amount <= 0) continue; // 入金のみ
+
+        // 日付を正規化（YYYY/MM/DD形式に）
+        let normalizedDate = dateStr;
+        if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
+          normalizedDate = dateStr.replace(/-/g, '/');
+        } else if (dateStr.match(/^\d{4}\/\d{1,2}\/\d{1,2}$/)) {
+          const parts = dateStr.split('/');
+          normalizedDate = parts[0] + '/' + parts[1].padStart(2, '0') + '/' + parts[2].padStart(2, '0');
+        }
+
+        // 重複チェック用のキー生成
+        const checkKey = `${normalizedDate}-${timeStr}-${amount}-${sender}`;
+        const isDuplicate = bankDeposits.some(d =>
+          d.date === normalizedDate && d.time === timeStr && d.amount === amount && d.senderName === sender
+        );
+
+        pendingImportData.push({
+          date: normalizedDate,
+          time: timeStr,
+          amount: amount,
+          senderName: sender,
+          isDuplicate: isDuplicate
+        });
+      }
+
+      renderImportPreview();
+    }
+
+    function renderImportPreview() {
+      const tbody = document.getElementById('import-preview-tbody');
+      const previewDiv = document.getElementById('import-preview');
+      const summaryP = document.getElementById('import-summary');
+      const importBtn = document.getElementById('import-btn');
+
+      if (pendingImportData.length === 0) {
+        previewDiv.classList.add('hidden');
+        importBtn.disabled = true;
+        importBtn.className = 'flex-1 px-4 py-3 bg-gray-300 text-gray-500 rounded-lg font-medium cursor-not-allowed';
+        alert('インポート可能な入金データがありません');
+        return;
+      }
+
+      previewDiv.classList.remove('hidden');
+
+      let html = '';
+      for (const item of pendingImportData) {
+        const rowClass = item.isDuplicate ? 'bg-red-50' : 'bg-white';
+        const statusBadge = item.isDuplicate
+          ? '<span class="px-2 py-1 bg-red-100 text-red-700 rounded text-xs">重複</span>'
+          : '<span class="px-2 py-1 bg-green-100 text-green-700 rounded text-xs">新規</span>';
+
+        html += `
+          <tr class="${rowClass}">
+            <td class="px-3 py-2">${item.date}</td>
+            <td class="px-3 py-2">${item.time}</td>
+            <td class="px-3 py-2 text-right font-medium">¥${item.amount.toLocaleString()}</td>
+            <td class="px-3 py-2">${item.senderName || '-'}</td>
+            <td class="px-3 py-2 text-center">${statusBadge}</td>
+          </tr>
+        `;
+      }
+      tbody.innerHTML = html;
+
+      const newCount = pendingImportData.filter(d => !d.isDuplicate).length;
+      const dupCount = pendingImportData.filter(d => d.isDuplicate).length;
+      const totalAmount = pendingImportData.filter(d => !d.isDuplicate).reduce((sum, d) => sum + d.amount, 0);
+
+      summaryP.innerHTML = `新規: <strong>${newCount}件</strong>（¥${totalAmount.toLocaleString()}）`;
+      if (dupCount > 0) {
+        summaryP.innerHTML += ` / <span class="text-red-600">重複スキップ: ${dupCount}件</span>`;
+      }
+
+      if (newCount > 0) {
+        importBtn.disabled = false;
+        importBtn.className = 'flex-1 px-4 py-3 bg-green-500 hover:bg-green-600 text-white rounded-lg font-medium cursor-pointer';
+        importBtn.textContent = `${newCount}件をインポート`;
+      } else {
+        importBtn.disabled = true;
+        importBtn.className = 'flex-1 px-4 py-3 bg-gray-300 text-gray-500 rounded-lg font-medium cursor-not-allowed';
+        importBtn.textContent = 'インポートするデータがありません';
+      }
+    }
+
+    function executeImport() {
+      const newItems = pendingImportData.filter(d => !d.isDuplicate);
+      if (newItems.length === 0) {
+        alert('インポートするデータがありません');
+        return;
+      }
+
+      if (!confirm(`${newItems.length}件の入金データをインポートしますか？`)) return;
+
+      for (const item of newItems) {
+        const newId = 'DEP-' + String(bankDeposits.length + 1).padStart(3, '0');
+        bankDeposits.push({
+          id: newId,
+          date: item.date,
+          time: item.time,
+          amount: item.amount,
+          senderName: item.senderName,
+          matched: false,
+          matchedTo: null
+        });
+      }
+
+      alert(`${newItems.length}件の入金データをインポートしました`);
+      closeImportModal();
+      renderBankDeposits();
+      updateDashboardCounts();
+    }
+
+    // ===================================================
+    // 例外入金モーダル
+    // ===================================================
+
+    function openExceptionModal() {
+      document.getElementById('exception-modal').classList.remove('hidden');
+    }
+
+    function closeExceptionModal() {
+      document.getElementById('exception-modal').classList.add('hidden');
+    }
+
+    function submitException() {
+      alert('例外入金の承認申請を送信しました（デモ）');
+      closeExceptionModal();
+    }
+
+    // ===================================================
+    // 機能リクエスト・バグ報告
+    // ===================================================
+
+    const requestList = [];
+
+    function openRequestModal() {
+      document.getElementById('request-modal').classList.remove('hidden');
+    }
+
+    function closeRequestModal() {
+      document.getElementById('request-modal').classList.add('hidden');
+      document.getElementById('request-form').reset();
+    }
+
+    function submitRequest() {
+      const type = document.querySelector('input[name="request-type"]:checked').value;
+      const screen = document.getElementById('request-screen').value;
+      const title = document.getElementById('request-title').value.trim();
+      const detail = document.getElementById('request-detail').value.trim();
+      const priority = document.getElementById('request-priority').value;
+      const reporter = document.getElementById('request-reporter').value.trim();
+
+      if (!title) {
+        alert('タイトルを入力してください');
+        return;
+      }
+
+      const typeLabels = { feature: '機能追加', improvement: '改善要望', bug: 'バグ報告' };
+      const priorityLabels = { low: '低', medium: '中', high: '高', critical: '緊急' };
+
+      const request = {
+        id: 'REQ-' + String(requestList.length + 1).padStart(3, '0'),
+        type,
+        typeLabel: typeLabels[type],
+        screen,
+        title,
+        detail,
+        priority,
+        priorityLabel: priorityLabels[priority],
+        reporter: reporter || '匿名',
+        date: new Date().toISOString().slice(0, 10).replace(/-/g, '/'),
+        status: '受付済'
+      };
+
+      requestList.push(request);
+
+      alert(`リクエストを受け付けました。\n\nID: ${request.id}\n種別: ${request.typeLabel}\nタイトル: ${request.title}\n\nご報告ありがとうございます。`);
+      closeRequestModal();
+    }
+
+    // ===================================================
+    // 催促機能
+    // ===================================================
+
+    function openReminderModal(wid, scheduleNo) {
+      const settlement = settlementData[wid];
+      const person = getPersonByHn(settlement.hn);
+      const schedule = settlement.schedule.find(s => s.no === scheduleNo);
+
+      document.getElementById('reminder-wid').value = wid;
+      document.getElementById('reminder-schedule-no').value = scheduleNo;
+      document.getElementById('reminder-target').textContent =
+        `${person.name}（${person.hn}）/ ${wid} 第${scheduleNo}回`;
+
+      // 過去の履歴を表示
+      const history = reminderHistory.filter(r => r.wid === wid && r.scheduleNo === scheduleNo);
+      const historyDiv = document.getElementById('reminder-history');
+      if (history.length === 0) {
+        historyDiv.innerHTML = '<p class="text-gray-400">履歴なし</p>';
+      } else {
+        historyDiv.innerHTML = history.map(h =>
+          `<div class="p-2 bg-gray-50 rounded mb-1">
+            <span class="text-gray-500">${h.date}</span>
+            <span class="px-1 bg-orange-100 text-orange-700 rounded text-xs">${h.type}</span>
+            <span class="text-gray-600">${h.note}</span>
+            <span class="text-gray-400">（${h.user}）</span>
+          </div>`
+        ).join('');
+      }
+
+      document.getElementById('reminder-modal').classList.remove('hidden');
+    }
+
+    function closeReminderModal() {
+      document.getElementById('reminder-modal').classList.add('hidden');
+      document.getElementById('reminder-form').reset();
+    }
+
+    function submitReminder() {
+      const wid = document.getElementById('reminder-wid').value;
+      const scheduleNo = parseInt(document.getElementById('reminder-schedule-no').value);
+      const type = document.getElementById('reminder-type').value;
+      const note = document.getElementById('reminder-note').value.trim();
+      const user = document.getElementById('reminder-user').value.trim() || '担当者';
+
+      if (!note) {
+        alert('結果・メモを入力してください');
+        return;
+      }
+
+      const reminder = {
+        id: 'REM-' + String(reminderHistory.length + 1).padStart(3, '0'),
+        wid,
+        scheduleNo,
+        type,
+        date: new Date().toISOString().slice(0, 10).replace(/-/g, '/'),
+        note,
+        user
+      };
+
+      reminderHistory.push(reminder);
+      alert('催促を記録しました');
+      closeReminderModal();
+      renderReminderList();
+      renderOverdueList();
+    }
+
+    function renderReminderList() {
+      const container = document.getElementById('reminder-list');
+      if (!container) return;
+
+      const reminders = getReminderNeeded().filter(r => r.needsReminder);
+      document.getElementById('reminder-count').textContent = reminders.length + '件';
+
+      if (reminders.length === 0) {
+        container.innerHTML = '<p class="p-4 text-gray-500 text-center">催促が必要な案件はありません</p>';
+        return;
+      }
+
+      let html = '';
+      for (const item of reminders.slice(0, 10)) {
+        const lastInfo = item.lastReminder
+          ? `最終: ${item.lastReminder.date}（${item.daysSinceReminder}日前）`
+          : '催促履歴なし';
+
+        html += `
+          <div class="p-4 hover:bg-orange-50 cursor-pointer" onclick="openReminderModal('${item.settlement.wid}', ${item.schedule.no})">
+            <div class="flex items-start justify-between">
+              <div>
+                <p class="font-bold text-blue-800">${item.person.hn}</p>
+                <p class="text-sm text-gray-600">${item.person.name}</p>
+                <p class="text-xs text-gray-500">${item.settlement.wid} 第${item.schedule.no}回 / 遅延${item.daysOverdue}日</p>
+                <p class="text-xs text-orange-600">${lastInfo}</p>
+              </div>
+              <div class="text-right">
+                <p class="font-bold text-red-600">¥${item.schedule.amount.toLocaleString()}</p>
+                <button class="mt-1 px-2 py-1 bg-orange-500 hover:bg-orange-600 text-white rounded text-xs">記録</button>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+      container.innerHTML = html;
+    }
+
+    // ===================================================
+    // 弁護士別集計表示
+    // ===================================================
+
+    function showLawyerTab(tab) {
+      document.getElementById('lawyer-tab-search').className = 'px-4 py-2 rounded-lg font-medium ' + (tab === 'search' ? 'tab-active' : 'tab-inactive');
+      document.getElementById('lawyer-tab-stats').className = 'px-4 py-2 rounded-lg font-medium ' + (tab === 'stats' ? 'tab-active' : 'tab-inactive');
+      document.getElementById('lawyer-search-section').classList.toggle('hidden', tab !== 'search');
+      document.getElementById('lawyer-stats-section').classList.toggle('hidden', tab !== 'stats');
+
+      if (tab === 'stats') {
+        renderLawyerStats();
+      }
+    }
+
+    function renderLawyerStats() {
+      const tbody = document.getElementById('lawyer-stats-tbody');
+      if (!tbody) return;
+
+      const stats = getStatsByLawyer();
+
+      if (stats.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" class="px-4 py-8 text-center text-gray-500">弁護士経由の案件はありません</td></tr>';
+        return;
+      }
+
+      let html = '';
+      for (const s of stats) {
+        html += `
+          <tr class="hover:bg-gray-50">
+            <td class="px-4 py-3 font-medium">${s.name}</td>
+            <td class="px-4 py-3 text-sm text-gray-500">${s.office}</td>
+            <td class="px-4 py-3 text-center">${s.totalCases}</td>
+            <td class="px-4 py-3 text-center text-blue-600">${s.activeCases}</td>
+            <td class="px-4 py-3 text-center ${s.overdueCases > 0 ? 'text-red-600 font-bold' : ''}">${s.overdueCases}</td>
+            <td class="px-4 py-3 text-right">¥${s.totalAmount.toLocaleString()}</td>
+            <td class="px-4 py-3 text-right text-green-600">¥${s.paidAmount.toLocaleString()}</td>
+            <td class="px-4 py-3 text-right text-blue-600 font-bold">¥${s.remainingAmount.toLocaleString()}</td>
+          </tr>
+        `;
+      }
+      tbody.innerHTML = html;
+    }
+
+    function exportLawyerStats() {
+      alert('弁護士別集計レポートを出力します（デモ）');
+    }
+
+    // ===================================================
+    // 権利者別集計表示
+    // ===================================================
+
+    function renderHolderStats() {
+      const tbody = document.getElementById('holder-stats-tbody');
+      if (!tbody) return;
+
+      const stats = getStatsByHolder();
+
+      if (stats.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" class="px-4 py-8 text-center text-gray-500">データがありません</td></tr>';
+        return;
+      }
+
+      let html = '';
+      for (const s of stats) {
+        html += `
+          <tr class="hover:bg-gray-50">
+            <td class="px-4 py-3">
+              <p class="font-medium">${s.name}</p>
+              <p class="text-xs text-gray-400">${s.bankInfo}</p>
+            </td>
+            <td class="px-4 py-3 text-center">${s.totalCases}</td>
+            <td class="px-4 py-3 text-center text-blue-600">${s.activeCases}</td>
+            <td class="px-4 py-3 text-center ${s.overdueCases > 0 ? 'text-red-600 font-bold' : ''}">${s.overdueCases}</td>
+            <td class="px-4 py-3 text-right">¥${s.totalAmount.toLocaleString()}</td>
+            <td class="px-4 py-3 text-right text-green-600">¥${s.paidAmount.toLocaleString()}</td>
+            <td class="px-4 py-3 text-right text-purple-600">¥${s.thisMonthPaid.toLocaleString()}</td>
+            <td class="px-4 py-3 text-center">
+              <button onclick="showHolderDetail('${s.code}')" class="text-blue-600 hover:text-blue-800 text-sm">詳細</button>
+            </td>
+          </tr>
+        `;
+      }
+      tbody.innerHTML = html;
+    }
+
+    function showHolderDetail(code) {
+      const stats = getStatsByHolder().find(s => s.code === code);
+      if (!stats) return;
+      alert(`【${stats.name}】\n案件数: ${stats.totalCases}\n合計額: ¥${stats.totalAmount.toLocaleString()}\n入金済: ¥${stats.paidAmount.toLocaleString()}\n今月入金: ¥${stats.thisMonthPaid.toLocaleString()}`);
+    }
+
+    function exportHolderStats() {
+      alert('権利者別集計レポートを出力します（デモ）');
+    }
+
+    // ===================================================
+    // 入金承認機能（ロールA2）
+    // ===================================================
+
+    // 承認待ち件数を取得
+    function getPendingApprovalCounts() {
+      const normalCount = matchRequests.filter(r => r.status === '承認待ち').length;
+      const exceptionCount = exceptionPayments.filter(p => p.status === '承認待ち').length;
+      return { normalCount, exceptionCount };
+    }
+
+    // 承認待ち一覧を描画
+    function renderPendingApprovals() {
+      const tbody = document.getElementById('pending-approval-tbody');
+      if (!tbody) return;
+
+      const counts = getPendingApprovalCounts();
+      document.getElementById('pending-normal-count').textContent = counts.normalCount + '件';
+      document.getElementById('pending-exception-count').textContent = counts.exceptionCount + '件';
+
+      const pendingMatches = matchRequests.filter(r => r.status === '承認待ち');
+      const pendingExceptions = exceptionPayments.filter(p => p.status === '承認待ち');
+
+      // 一括承認ボタンの表示/非表示
+      const bulkBtn = document.getElementById('bulk-approve-btn');
+      if (pendingMatches.length + pendingExceptions.length > 0) {
+        bulkBtn.classList.remove('hidden');
+      } else {
+        bulkBtn.classList.add('hidden');
+      }
+
+      if (pendingMatches.length === 0 && pendingExceptions.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" class="px-4 py-8 text-center text-gray-500">承認待ちの入金はありません</td></tr>';
+        document.getElementById('select-all-pending').checked = false;
+        return;
+      }
+
+      let html = '';
+
+      // 通常入金
+      for (const req of pendingMatches) {
+        const settlement = settlementData[req.wid];
+        const person = settlement ? getPersonByHn(settlement.hn) : null;
+        const schedule = settlement ? settlement.schedule.find(s => s.no === req.scheduleNo) : null;
+        const agreedAmount = schedule ? schedule.amount : req.amount;
+
+        html += `
+          <tr class="hover:bg-yellow-50">
+            <td class="px-4 py-3 text-center">
+              <input type="checkbox" class="pending-checkbox w-4 h-4" data-type="match" data-id="${req.id}" onchange="updateBulkButton()">
+            </td>
+            <td class="px-4 py-3 text-sm">${req.registeredAt}</td>
+            <td class="px-4 py-3"><span class="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs">通常</span></td>
+            <td class="px-4 py-3 text-sm">
+              <p class="font-bold text-gray-800">${person ? person.name : '-'}</p>
+            </td>
+            <td class="px-4 py-3 text-sm text-right font-bold text-blue-700">¥${req.amount.toLocaleString()}</td>
+            <td class="px-4 py-3 text-sm">
+              <p class="text-gray-600">${req.wid} 第${req.scheduleNo}回</p>
+              <p class="font-medium">${person ? person.name : '-'}</p>
+              <p class="text-green-600">合意額: ¥${agreedAmount.toLocaleString()}</p>
+            </td>
+            <td class="px-4 py-3 text-sm">${req.registeredBy}</td>
+            <td class="px-4 py-3 text-center">
+              <button onclick="approveMatch('${req.id}')" class="px-3 py-1 bg-green-500 hover:bg-green-600 text-white rounded text-sm mr-1">承認</button>
+              <button onclick="rejectMatch('${req.id}')" class="px-3 py-1 bg-red-500 hover:bg-red-600 text-white rounded text-sm">差戻</button>
+            </td>
+          </tr>
+        `;
+      }
+
+      // 例外入金
+      for (const exc of pendingExceptions) {
+        const person = getPersonByHn(exc.hn);
+        const settlement = exc.wid ? settlementData[exc.wid] : null;
+
+        html += `
+          <tr class="hover:bg-orange-50">
+            <td class="px-4 py-3 text-center">
+              <input type="checkbox" class="pending-checkbox w-4 h-4" data-type="exception" data-id="${exc.id}" onchange="updateBulkButton()">
+            </td>
+            <td class="px-4 py-3 text-sm">${exc.registeredAt}</td>
+            <td class="px-4 py-3"><span class="px-2 py-1 bg-orange-100 text-orange-700 rounded text-xs">例外（${exc.method}）</span></td>
+            <td class="px-4 py-3 text-sm">
+              <p class="font-bold text-gray-800">${person ? person.name : '-'}</p>
+            </td>
+            <td class="px-4 py-3 text-sm text-right font-bold text-blue-700">¥${exc.amount.toLocaleString()}</td>
+            <td class="px-4 py-3 text-sm">
+              ${exc.wid ? `<p class="text-gray-600">${exc.wid}</p>` : '<p class="text-gray-400">-</p>'}
+              ${settlement ? `<p class="font-medium">${person ? person.name : '-'}</p>` : ''}
+              ${settlement ? `<p class="text-green-600">合意額: ¥${settlement.totalAmount.toLocaleString()}</p>` : ''}
+            </td>
+            <td class="px-4 py-3 text-sm">${exc.registeredBy}</td>
+            <td class="px-4 py-3 text-center">
+              <button onclick="approveException('${exc.id}')" class="px-3 py-1 bg-green-500 hover:bg-green-600 text-white rounded text-sm mr-1">承認</button>
+              <button onclick="rejectException('${exc.id}')" class="px-3 py-1 bg-red-500 hover:bg-red-600 text-white rounded text-sm">差戻</button>
+            </td>
+          </tr>
+        `;
+      }
+
+      tbody.innerHTML = html;
+      document.getElementById('select-all-pending').checked = false;
+      updateBulkButton();
+    }
+
+    // 本日承認済みを描画
+    function renderApprovedToday() {
+      const tbody = document.getElementById('approved-today-tbody');
+      if (!tbody) return;
+
+      const today = new Date().toISOString().slice(0, 10).replace(/-/g, '/');
+      const approvedToday = matchRequests.filter(r =>
+        r.status === '承認済み' && r.approvedAt && r.approvedAt.startsWith(today)
+      );
+
+      if (approvedToday.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="px-4 py-8 text-center text-gray-500">本日承認済みの入金はありません</td></tr>';
+        return;
+      }
+
+      let html = '';
+      for (const req of approvedToday) {
+        const settlement = settlementData[req.wid];
+        const person = settlement ? getPersonByHn(settlement.hn) : null;
+
+        html += `
+          <tr class="hover:bg-gray-50">
+            <td class="px-4 py-3 text-sm">${req.approvedAt}</td>
+            <td class="px-4 py-3 text-sm">
+              <p class="font-bold text-blue-800">${person ? person.hn : '-'}</p>
+              <p class="text-gray-600">${person ? person.name : '-'}</p>
+            </td>
+            <td class="px-4 py-3 text-sm">${req.wid} 第${req.scheduleNo}回</td>
+            <td class="px-4 py-3 text-sm text-right font-bold">¥${req.amount.toLocaleString()}</td>
+            <td class="px-4 py-3 text-sm">${req.registeredBy}</td>
+            <td class="px-4 py-3 text-sm text-green-600 font-medium">${req.approvedBy}</td>
+          </tr>
+        `;
+      }
+      tbody.innerHTML = html;
+    }
+
+    // 入金照合を承認
+    function approveMatch(requestId) {
+      const request = matchRequests.find(r => r.id === requestId);
+      if (!request) return;
+
+      const approver = prompt('承認者名を入力してください（登録者と異なる必要があります）:');
+      if (!approver) return;
+
+      if (approver === request.registeredBy) {
+        alert('⚠ 不正防止のため、登録者と同じ担当者は承認できません。');
+        return;
+      }
+
+      if (confirm(`以下の入金を承認しますか？\n\n和解ID: ${request.wid} 第${request.scheduleNo}回\n金額: ¥${request.amount.toLocaleString()}\n登録者: ${request.registeredBy}\n承認者: ${approver}`)) {
+        request.status = '承認済み';
+        request.approvedAt = new Date().toLocaleString('ja-JP').replace(/\//g, '/');
+        request.approvedBy = approver;
+
+        // 和解スケジュールを更新
+        const settlement = settlementData[request.wid];
+        if (settlement) {
+          const schedule = settlement.schedule.find(s => s.no === request.scheduleNo);
+          if (schedule) {
+            schedule.status = '入金済';
+            schedule.paidDate = new Date().toISOString().slice(0, 10).replace(/-/g, '/');
+            schedule.paidAmount = request.amount;
+          }
+
+          // 全入金済みなら完了に
+          const allPaid = settlement.schedule.every(s => s.status === '入金済');
+          if (allPaid) {
+            settlement.status = '完了';
+          }
+        }
+
+        alert('承認しました');
+        renderPendingApprovals();
+        renderApprovedToday();
+      }
+    }
+
+    // 入金照合を差戻し
+    function rejectMatch(requestId) {
+      const request = matchRequests.find(r => r.id === requestId);
+      if (!request) return;
+
+      const reason = prompt('差戻し理由を入力してください:');
+      if (!reason) return;
+
+      request.status = '差戻し';
+      request.note = reason;
+
+      alert('差戻ししました');
+      renderPendingApprovals();
+    }
+
+    // 例外入金を承認
+    function approveException(excId) {
+      const exc = exceptionPayments.find(e => e.id === excId);
+      if (!exc) return;
+
+      const approver = prompt('承認者名を入力してください（登録者と異なる必要があります）:');
+      if (!approver) return;
+
+      if (approver === exc.registeredBy) {
+        alert('⚠ 不正防止のため、登録者と同じ担当者は承認できません。');
+        return;
+      }
+
+      if (confirm(`以下の例外入金を承認しますか？\n\n発信者: ${exc.hn}\n金額: ¥${exc.amount.toLocaleString()}\n方法: ${exc.method}\n登録者: ${exc.registeredBy}\n承認者: ${approver}`)) {
+        exc.status = '承認済み';
+        exc.approvedAt = new Date().toLocaleString('ja-JP').replace(/\//g, '/');
+        exc.approvedBy = approver;
+
+        alert('承認しました');
+        renderPendingApprovals();
+      }
+    }
+
+    // 例外入金を差戻し
+    function rejectException(excId) {
+      const exc = exceptionPayments.find(e => e.id === excId);
+      if (!exc) return;
+
+      const reason = prompt('差戻し理由を入力してください:');
+      if (!reason) return;
+
+      exc.status = '差戻し';
+      exc.note = reason;
+
+      alert('差戻ししました');
+      renderPendingApprovals();
+    }
+
+    // ===================================================
+    // 一括承認機能
+    // ===================================================
+
+    // 全選択/解除
+    function toggleSelectAll() {
+      const selectAll = document.getElementById('select-all-pending');
+      const checkboxes = document.querySelectorAll('.pending-checkbox');
+      checkboxes.forEach(cb => {
+        cb.checked = selectAll.checked;
+      });
+      updateBulkButton();
+    }
+
+    // 一括承認ボタンの状態を更新
+    function updateBulkButton() {
+      const checkboxes = document.querySelectorAll('.pending-checkbox:checked');
+      const bulkBtn = document.getElementById('bulk-approve-btn');
+      if (checkboxes.length > 0) {
+        bulkBtn.disabled = false;
+        bulkBtn.textContent = `✓ 選択した ${checkboxes.length} 件を一括承認`;
+        bulkBtn.classList.remove('bg-gray-300', 'cursor-not-allowed');
+        bulkBtn.classList.add('bg-green-600', 'hover:bg-green-700', 'cursor-pointer');
+      } else {
+        bulkBtn.disabled = true;
+        bulkBtn.textContent = '✓ 一括承認';
+        bulkBtn.classList.add('bg-gray-300', 'cursor-not-allowed');
+        bulkBtn.classList.remove('bg-green-600', 'hover:bg-green-700', 'cursor-pointer');
+      }
+    }
+
+    // 一括承認実行
+    function bulkApprove() {
+      const checkboxes = document.querySelectorAll('.pending-checkbox:checked');
+      if (checkboxes.length === 0) {
+        alert('承認する項目を選択してください');
+        return;
+      }
+
+      const approver = prompt('承認者名を入力してください（全選択項目の登録者と異なる必要があります）:');
+      if (!approver) return;
+
+      // 同一登録者チェック
+      const items = [];
+      let hasSameRegistrant = false;
+      checkboxes.forEach(cb => {
+        const type = cb.dataset.type;
+        const id = cb.dataset.id;
+
+        if (type === 'match') {
+          const req = matchRequests.find(r => r.id === id);
+          if (req) {
+            if (req.registeredBy === approver) {
+              hasSameRegistrant = true;
+            }
+            items.push({ type, data: req });
+          }
+        } else if (type === 'exception') {
+          const exc = exceptionPayments.find(e => e.id === id);
+          if (exc) {
+            if (exc.registeredBy === approver) {
+              hasSameRegistrant = true;
+            }
+            items.push({ type, data: exc });
+          }
+        }
+      });
+
+      if (hasSameRegistrant) {
+        alert('⚠ 不正防止のため、自分が登録した項目は承認できません。\n該当項目のチェックを外してください。');
+        return;
+      }
+
+      if (!confirm(`${items.length} 件を一括承認しますか？\n\n承認者: ${approver}`)) {
+        return;
+      }
+
+      const now = new Date().toLocaleString('ja-JP').replace(/\//g, '/');
+      let successCount = 0;
+
+      items.forEach(item => {
+        if (item.type === 'match') {
+          const req = item.data;
+          req.status = '承認済み';
+          req.approvedAt = now;
+          req.approvedBy = approver;
+
+          // 和解スケジュールを更新
+          const settlement = settlementData[req.wid];
+          if (settlement) {
+            const schedule = settlement.schedule.find(s => s.no === req.scheduleNo);
+            if (schedule) {
+              schedule.status = '入金済';
+              schedule.paidDate = new Date().toISOString().slice(0, 10).replace(/-/g, '/');
+              schedule.paidAmount = req.amount;
+            }
+
+            // 全入金済みなら完了に
+            const allPaid = settlement.schedule.every(s => s.status === '入金済');
+            if (allPaid) {
+              settlement.status = '完了';
+            }
+          }
+          successCount++;
+        } else if (item.type === 'exception') {
+          const exc = item.data;
+          exc.status = '承認済み';
+          exc.approvedAt = now;
+          exc.approvedBy = approver;
+          successCount++;
+        }
+      });
+
+      alert(`${successCount} 件を承認しました`);
+      renderPendingApprovals();
+      renderApprovedToday();
+    }
+
+    // ===================================================
+    // 検索機能（各ロール共通ベース）
+    // ===================================================
+
+    // 発信者と和解情報を検索
+    function searchSettlementInfo(query) {
+      if (!query.trim()) return null;
+
+      // まず発信者を検索
+      const persons = searchPersonByName(query);
+      if (persons.length === 0) return null;
+
+      // 各発信者の和解情報を取得
+      return persons.map(person => {
+        const settlements = getSettlementsByHn(person.hn);
+        return { person, settlements };
+      });
+    }
+
+    // ロールD（経理）用検索
+    function searchForRoleD() {
+      const query = document.getElementById('role-d-search').value.trim();
+      const resultDiv = document.getElementById('role-d-result');
+      const noResultDiv = document.getElementById('role-d-no-result');
+
+      if (!query) {
+        alert('検索キーワードを入力してください');
+        return;
+      }
+
+      const results = searchSettlementInfo(query);
+
+      if (!results || results.length === 0) {
+        resultDiv.classList.add('hidden');
+        noResultDiv.classList.remove('hidden');
+        return;
+      }
+
+      noResultDiv.classList.add('hidden');
+      resultDiv.classList.remove('hidden');
+
+      // 最初の結果を表示（本人対応用なので1件表示）
+      const { person, settlements } = results[0];
+
+      if (settlements.length === 0) {
+        resultDiv.innerHTML = `
+          <div class="p-4 bg-gray-100 border border-gray-300 rounded-lg">
+            <div class="flex items-center gap-2 mb-3">
+              <p class="font-bold text-blue-800 text-lg">${person.hn}</p>
+              <p class="text-gray-600">${person.name}</p>
+            </div>
+            <p class="text-gray-500">この発信者には和解データがありません</p>
+          </div>
+        `;
+        return;
+      }
+
+      const settlement = settlements[0]; // 最新の和解
+      const paidCount = settlement.schedule.filter(s => s.status === '入金済').length;
+      const remainingAmount = getRemainingAmount(settlement);
+      const nextSchedule = settlement.schedule.find(s => s.status === '未入金' || s.status === '遅延');
+      const isOverdue = settlement.status === '遅延中';
+
+      let statusHtml = '';
+      if (settlement.status === '完了') {
+        statusHtml = `<div class="mt-3 p-2 bg-blue-100 text-blue-800 rounded text-center font-medium">✅ 支払完了</div>`;
+      } else if (isOverdue) {
+        statusHtml = `<div class="mt-3 p-2 bg-red-100 text-red-800 rounded text-center font-medium">🔴 遅延中（要確認）</div>`;
+      } else {
+        statusHtml = `<div class="mt-3 p-2 bg-green-100 text-green-800 rounded text-center font-medium">🟢 期日内（問題なし）</div>`;
+      }
+
+      resultDiv.innerHTML = `
+        <div class="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+          <div class="flex items-center gap-2 mb-3">
+            <p class="font-bold text-blue-800 text-lg">${person.hn}</p>
+            <p class="text-gray-600">${person.name}</p>
+            ${person.hasLawyer ? `<span class="px-2 py-1 bg-purple-100 text-purple-700 rounded text-xs">弁護士あり</span>` : ''}
+          </div>
+          <h4 class="font-bold text-gray-800 mb-3">【支払状況サマリー】</h4>
+          <div class="grid grid-cols-2 gap-4 text-sm">
+            <div>
+              <p class="text-gray-500">合意内容</p>
+              <p class="font-medium">${settlement.paymentType}（${settlement.installments}回）</p>
+            </div>
+            <div>
+              <p class="text-gray-500">支払済</p>
+              <p class="font-medium">${paidCount}回</p>
+            </div>
+            <div>
+              <p class="text-gray-500">残額</p>
+              <p class="font-bold text-blue-600">¥${remainingAmount.toLocaleString()}</p>
+            </div>
+            <div>
+              <p class="text-gray-500">次回支払期限</p>
+              <p class="font-medium">${nextSchedule ? nextSchedule.dueDate : '---'}</p>
+            </div>
+          </div>
+          ${statusHtml}
+        </div>
+      `;
+    }
+
+    // ロールB（管理者）用検索
+    function searchForRoleB() {
+      const query = document.getElementById('role-b-search').value.trim();
+      const resultDiv = document.getElementById('role-b-result');
+
+      if (!query) {
+        alert('検索キーワードを入力してください');
+        return;
+      }
+
+      const results = searchSettlementInfo(query);
+
+      if (!results || results.length === 0) {
+        resultDiv.classList.remove('hidden');
+        resultDiv.innerHTML = `<div class="p-4 bg-gray-100 text-gray-600 rounded-lg text-center">該当する発信者が見つかりませんでした</div>`;
+        return;
+      }
+
+      resultDiv.classList.remove('hidden');
+
+      let html = '';
+      for (const { person, settlements } of results) {
+        if (settlements.length === 0) continue;
+
+        const settlement = settlements[0];
+        html += `
+          <div class="p-4 bg-amber-50 border border-amber-200 rounded-lg mb-2">
+            <div class="flex items-start justify-between">
+              <div>
+                <p class="font-bold text-blue-800">${person.hn}</p>
+                <p class="text-sm text-gray-600">${person.name}</p>
+                <p class="text-xs text-gray-500">${settlement.wid} / ${settlement.paymentType}（${settlement.installments}回）</p>
+              </div>
+              <div class="flex gap-2">
+                <button onclick="openSettlementEdit('${settlement.wid}')" class="px-3 py-1 bg-amber-500 hover:bg-amber-600 text-white rounded text-sm">合意変更</button>
+                <button onclick="openPaymentDetail('${settlement.wid}')" class="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded text-sm">詳細</button>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      resultDiv.innerHTML = html || `<div class="p-4 bg-gray-100 text-gray-600 rounded-lg text-center">和解データがありません</div>`;
+    }
+
+    // ロールC（弁護士）用検索
+    function searchForRoleC() {
+      const query = document.getElementById('role-c-search').value.trim();
+      const resultDiv = document.getElementById('role-c-result');
+
+      if (!query) {
+        alert('検索キーワードを入力してください');
+        return;
+      }
+
+      const results = searchSettlementInfo(query);
+
+      if (!results || results.length === 0) {
+        resultDiv.classList.remove('hidden');
+        resultDiv.innerHTML = `<div class="p-4 bg-gray-100 text-gray-600 rounded-lg text-center">該当する発信者が見つかりませんでした</div>`;
+        return;
+      }
+
+      resultDiv.classList.remove('hidden');
+
+      let html = '';
+      for (const { person, settlements } of results) {
+        if (settlements.length === 0) continue;
+
+        const settlement = settlements[0];
+        const paidCount = settlement.schedule.filter(s => s.status === '入金済').length;
+        const remainingAmount = getRemainingAmount(settlement);
+        const isOverdue = settlement.status === '遅延中';
+
+        html += `
+          <div class="p-4 ${isOverdue ? 'bg-red-50 border-red-200' : 'bg-green-50 border-green-200'} border rounded-lg mb-2">
+            <div class="flex items-start justify-between">
+              <div>
+                <p class="font-bold text-blue-800">${person.hn}</p>
+                <p class="text-sm text-gray-600">${person.name}</p>
+                <p class="text-xs text-gray-500">${settlement.wid} / 進捗：${paidCount}/${settlement.installments}回</p>
+              </div>
+              <div class="text-right">
+                <p class="text-sm text-gray-500">残額</p>
+                <p class="font-bold ${isOverdue ? 'text-red-600' : 'text-green-600'}">¥${remainingAmount.toLocaleString()}</p>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      resultDiv.innerHTML = html || `<div class="p-4 bg-gray-100 text-gray-600 rounded-lg text-center">和解データがありません</div>`;
+    }
+
+    // 合意変更モーダルを開く（デモ）
+    function openSettlementEdit(wid) {
+      alert(`和解ID: ${wid} の合意変更画面を開きます（デモ）`);
+    }
+
+    // 支払詳細を表示（デモ）
+    function openPaymentDetail(wid) {
+      alert(`和解ID: ${wid} の詳細画面を開きます（デモ）`);
+    }
+
+    // ページ初期化
+    document.addEventListener('DOMContentLoaded', function() {
+      updateDashboardCounts();
+      renderBankDeposits();
+      renderOverdueList();
+      renderReminderList();
+      renderHolderStats();
+      renderPendingApprovals();
+      renderApprovedToday();
+    });
+
+    // 期限超過リストを描画
+    function renderOverdueList() {
+      const tbody = document.getElementById('overdue-tbody');
+      if (!tbody) return;
+
+      const overdueList = getOverdueSchedules();
+
+      if (overdueList.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" class="px-4 py-8 text-center text-gray-500">期限超過はありません</td></tr>';
+        return;
+      }
+
+      let html = '';
+      for (const item of overdueList) {
+        const daysColor = item.daysOverdue > 7 ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700';
+        const daysIcon = item.daysOverdue > 7 ? '🔴' : '🟡';
+
+        // 最新の催促履歴を確認
+        const history = reminderHistory.filter(r => r.wid === item.settlement.wid && r.scheduleNo === item.schedule.no);
+        const lastReminder = history.sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+        const reminderInfo = lastReminder ? `${lastReminder.date}` : '-';
+
+        html += `
+          <tr class="hover:bg-red-50">
+            <td class="px-4 py-3 text-sm font-bold text-blue-600">${item.person.hn}</td>
+            <td class="px-4 py-3 text-sm">${item.person.name}</td>
+            <td class="px-4 py-3 text-sm">${item.settlement.wid}</td>
+            <td class="px-4 py-3 text-sm">第${item.schedule.no}回</td>
+            <td class="px-4 py-3 text-sm">${item.schedule.dueDate}</td>
+            <td class="px-4 py-3 text-sm">¥${item.schedule.amount.toLocaleString()}</td>
+            <td class="px-4 py-3"><span class="px-2 py-1 ${daysColor} rounded text-xs font-bold">${daysIcon} ${item.daysOverdue}日</span></td>
+            <td class="px-4 py-3 text-center">
+              <button onclick="openReminderModal('${item.settlement.wid}', ${item.schedule.no})"
+                class="px-2 py-1 bg-orange-500 hover:bg-orange-600 text-white rounded text-xs">
+                催促
+              </button>
+              <p class="text-xs text-gray-400 mt-1">${reminderInfo}</p>
+            </td>
+          </tr>
+        `;
+      }
+      tbody.innerHTML = html;
+    }
+  </script>
+
+</body>
+</html>
