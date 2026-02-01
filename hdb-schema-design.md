@@ -228,16 +228,26 @@ HDB（Human Database）は、発信者開示請求で得られた開示結果を
 |--------|-----|------|------|
 | settlement_id | INTEGER | PK | 和解ID |
 | hn_id | TEXT | FK✓ | 発信者ID |
-| settlement_status | TEXT | ✓ | 交渉中/和解成立/決裂 |
-| settled_at | DATE | - | 和解成立日 |
-| settlement_amount | INTEGER | - | 和解金額 |
-| payment_method | TEXT | - | 支払方法（一括/分割） |
-| installment_count | INTEGER | - | 分割回数 |
-| first_payment_due | DATE | - | 初回入金期限 |
-| agreement_pdf | BLOB | - | 合意書PDF（和解成立の場合必須） |
+| settlement_status | TEXT | ✓ | 交渉中/和解成立/終了 |
+| **settled_at** | DATE | - | 和解日（和解成立時必須） |
+| **settlement_amount** | INTEGER | - | 和解金額総額（和解成立時必須） |
+| **monthly_amount** | INTEGER | - | 月次の支払額 |
+| **installment_count** | INTEGER | - | 分割回数 |
+| **first_payment_due** | DATE | - | 初回支払日（和解成立時必須） |
+| **representation_warranty** | INTEGER | - | 表明保証の有無（0=なし, 1=あり） |
+| **agreement_pdf** | BLOB | - | 和解書PDF（和解成立時必須） |
+| agreement_pdf_filename | TEXT | - | 和解書PDFファイル名 |
 | wdb_wn | TEXT | - | WDBの合意番号（連携後に設定） |
-| failed_at | DATE | - | 決裂日 |
-| failure_reason | TEXT | - | 決裂理由 |
+| failed_at | DATE | - | 終了日 |
+| failure_reason | TEXT | - | 終了理由 |
+
+#### 和解成立時の必須項目
+
+和解ステータスが「和解成立」の場合、以下の項目が**必須**：
+- 和解日（settled_at）
+- 和解金額総額（settlement_amount）
+- 初回支払日（first_payment_due）
+- 和解書PDF（agreement_pdf）
 
 ---
 
@@ -337,3 +347,4 @@ HDB（人）
 |------|------|
 | 2026-01-31 | 初版作成 |
 | 2026-02-01 | 登録画面分離（プロバイダ開示/弁護士受任）、発信者項目更新、CSVインポート機能追加 |
+| 2026-02-01 | h_settlement更新：月次支払額・表明保証追加、和解成立時必須項目定義、和解書PDFアップロード対応 |

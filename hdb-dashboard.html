@@ -1382,28 +1382,88 @@
       <!-- タブ1: 基本情報 -->
       <div id="tab-info" class="tab-content">
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div class="bg-white rounded-xl shadow-md p-6">
-            <h3 class="text-lg font-bold text-gray-800 mb-4">個人情報</h3>
-            <div class="space-y-3">
-              <div class="flex justify-between py-2 border-b border-gray-100">
-                <span class="text-gray-500">氏名</span>
-                <span class="font-medium">山田 太郎</span>
+          <!-- 左カラム: 契約者・利用者情報 -->
+          <div class="space-y-6">
+            <!-- 契約者情報 -->
+            <div class="bg-white rounded-xl shadow-md p-6">
+              <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                <span>📁</span> 契約者情報
+              </h3>
+              <div class="space-y-3">
+                <div class="grid grid-cols-2 gap-4">
+                  <div>
+                    <span class="text-sm text-gray-500">契約者名</span>
+                    <p class="font-medium text-gray-800" id="detail-contractor-name">山田 太郎</p>
+                  </div>
+                  <div>
+                    <span class="text-sm text-gray-500">ふりがな</span>
+                    <p class="font-medium text-gray-800" id="detail-contractor-kana">やまだ たろう</p>
+                  </div>
+                </div>
               </div>
-              <div class="flex justify-between py-2 border-b border-gray-100">
-                <span class="text-gray-500">住所</span>
-                <span class="font-medium">東京都新宿区西新宿1-1-1</span>
-              </div>
-              <div class="flex justify-between py-2 border-b border-gray-100">
-                <span class="text-gray-500">電話番号</span>
-                <span class="font-medium">090-1234-5678</span>
-              </div>
-              <div class="flex justify-between py-2 border-b border-gray-100">
-                <span class="text-gray-500">メール</span>
-                <span class="font-medium">yamada@example.com</span>
+            </div>
+
+            <!-- 利用者情報 -->
+            <div class="bg-white rounded-xl shadow-md p-6">
+              <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                <span>👤</span> 利用者情報
+              </h3>
+              <div class="space-y-3">
+                <div class="grid grid-cols-2 gap-4">
+                  <div>
+                    <span class="text-sm text-gray-500">利用者名</span>
+                    <p class="font-medium text-gray-800" id="detail-user-name">山田 次郎</p>
+                  </div>
+                  <div>
+                    <span class="text-sm text-gray-500">ふりがな</span>
+                    <p class="font-medium text-gray-800" id="detail-user-kana">やまだ じろう</p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
 
+          <!-- 右カラム: 連絡先・メモ -->
+          <div class="space-y-6">
+            <!-- 連絡先 -->
+            <div class="bg-white rounded-xl shadow-md p-6">
+              <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                <span>📍</span> 連絡先
+              </h3>
+              <div class="space-y-3">
+                <div class="grid grid-cols-3 gap-4">
+                  <div>
+                    <span class="text-sm text-gray-500">郵便番号</span>
+                    <p class="font-medium text-gray-800" id="detail-postal">123-4567</p>
+                  </div>
+                  <div class="col-span-2">
+                    <span class="text-sm text-gray-500">住所</span>
+                    <p class="font-medium text-gray-800" id="detail-address">東京都新宿区西新宿1-1-1</p>
+                  </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                  <div>
+                    <span class="text-sm text-gray-500">電話番号</span>
+                    <p class="font-medium text-gray-800" id="detail-phone">090-1234-5678</p>
+                  </div>
+                  <div>
+                    <span class="text-sm text-gray-500">電子メール</span>
+                    <p class="font-medium text-gray-800" id="detail-email">yamada@example.com</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- メモ -->
+            <div class="bg-white rounded-xl shadow-md p-6">
+              <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                <span>📝</span> メモ
+              </h3>
+              <div class="bg-gray-50 rounded-lg p-4 min-h-[80px]">
+                <p class="text-gray-700 whitespace-pre-wrap" id="detail-memo">備考など...</p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -1519,28 +1579,127 @@
 
       <!-- タブ5: 和解管理 -->
       <div id="tab-settlement" class="tab-content hidden">
-        <div class="bg-white rounded-xl shadow-md p-6">
-          <h3 class="text-lg font-bold text-gray-800 mb-4">和解ステータス</h3>
-          <div class="space-y-3">
-            <div class="flex items-center gap-3 p-4 bg-yellow-50 border-2 border-yellow-300 rounded-lg">
-              <input type="radio" name="settlement" checked class="w-5 h-5">
-              <div>
-                <span class="font-medium text-yellow-800">🟡 交渉中</span>
-                <p class="text-sm text-yellow-700">やり取りあり・和解未成立</p>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <!-- 左側: 和解ステータス -->
+          <div class="bg-white rounded-xl shadow-md p-6">
+            <h3 class="text-lg font-bold text-gray-800 mb-4">和解ステータス</h3>
+            <div class="space-y-3">
+              <div class="flex items-center gap-3 p-4 bg-yellow-50 border-2 border-yellow-300 rounded-lg cursor-pointer" onclick="selectSettlementStatus('negotiating')">
+                <input type="radio" name="settlement" id="status-negotiating" checked class="w-5 h-5">
+                <div>
+                  <span class="font-medium text-yellow-800">🟡 交渉中</span>
+                  <p class="text-sm text-yellow-700">やり取りあり・和解未成立</p>
+                </div>
+              </div>
+              <div class="flex items-center gap-3 p-4 bg-gray-50 border-2 border-gray-200 rounded-lg cursor-pointer" onclick="selectSettlementStatus('settled')">
+                <input type="radio" name="settlement" id="status-settled" class="w-5 h-5">
+                <div>
+                  <span class="font-medium text-green-700">🟢 和解成立</span>
+                  <p class="text-sm text-gray-500">合意あり・WDB連携</p>
+                </div>
+              </div>
+              <div class="flex items-center gap-3 p-4 bg-gray-50 border-2 border-gray-200 rounded-lg cursor-pointer" onclick="selectSettlementStatus('ended')">
+                <input type="radio" name="settlement" id="status-ended" class="w-5 h-5">
+                <div>
+                  <span class="font-medium text-gray-600">⬛ 終了</span>
+                  <p class="text-sm text-gray-500">和解不成立・対応終了</p>
+                </div>
               </div>
             </div>
-            <div class="flex items-center gap-3 p-4 bg-gray-50 border-2 border-gray-200 rounded-lg">
-              <input type="radio" name="settlement" class="w-5 h-5">
+          </div>
+
+          <!-- 右側: 和解契約の内容 -->
+          <div class="bg-white rounded-xl shadow-md p-6" id="settlement-details-section">
+            <h3 class="text-lg font-bold text-gray-800 mb-4">📋 和解契約の内容</h3>
+            <div class="space-y-4">
+              <!-- 和解日 -->
               <div>
-                <span class="font-medium text-green-700">🟢 和解成立</span>
-                <p class="text-sm text-gray-500">合意あり・WDB連携</p>
+                <label class="block text-sm font-medium text-gray-700 mb-1">和解日</label>
+                <input type="date" id="settlement-date" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500">
               </div>
-            </div>
-            <div class="flex items-center gap-3 p-4 bg-gray-50 border-2 border-gray-200 rounded-lg">
-              <input type="radio" name="settlement" class="w-5 h-5">
+
+              <!-- 和解金額総額 -->
               <div>
-                <span class="font-medium text-gray-600">⬛ 終了</span>
-                <p class="text-sm text-gray-500">和解不成立・対応終了</p>
+                <label class="block text-sm font-medium text-gray-700 mb-1">和解金額総額</label>
+                <div class="relative">
+                  <input type="number" id="settlement-total-amount" placeholder="0" class="w-full px-3 py-2 pr-8 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500">
+                  <span class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500">円</span>
+                </div>
+              </div>
+
+              <!-- 支払方法 -->
+              <div class="grid grid-cols-2 gap-4">
+                <!-- 月次の支払額 -->
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">月次の支払額</label>
+                  <div class="relative">
+                    <input type="number" id="settlement-monthly-amount" placeholder="0" class="w-full px-3 py-2 pr-8 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500">
+                    <span class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500">円</span>
+                  </div>
+                </div>
+                <!-- 回数 -->
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">回数</label>
+                  <div class="relative">
+                    <input type="number" id="settlement-installment-count" placeholder="1" min="1" class="w-full px-3 py-2 pr-8 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500">
+                    <span class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500">回</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 初回支払日 -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">初回支払日</label>
+                <input type="date" id="settlement-first-payment-date" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500">
+              </div>
+
+              <!-- 表明保証の有無 -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">表明保証の有無</label>
+                <div class="flex gap-4">
+                  <label class="flex items-center gap-2 cursor-pointer">
+                    <input type="radio" name="representation-warranty" value="yes" class="w-4 h-4 text-green-600">
+                    <span class="text-sm">あり</span>
+                  </label>
+                  <label class="flex items-center gap-2 cursor-pointer">
+                    <input type="radio" name="representation-warranty" value="no" class="w-4 h-4 text-green-600">
+                    <span class="text-sm">なし</span>
+                  </label>
+                </div>
+              </div>
+
+              <!-- 和解書PDF -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">和解書PDF</label>
+                <div id="settlement-pdf-dropzone" class="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-green-400 transition-colors cursor-pointer" onclick="document.getElementById('settlement-pdf-input').click()">
+                  <input type="file" id="settlement-pdf-input" accept=".pdf" class="hidden" onchange="handleSettlementPdfUpload(event)">
+                  <div id="settlement-pdf-placeholder">
+                    <svg class="w-8 h-8 mx-auto text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                    </svg>
+                    <p class="text-sm text-gray-500">クリックしてPDFを選択</p>
+                    <p class="text-xs text-gray-400 mt-1">またはドラッグ＆ドロップ</p>
+                  </div>
+                  <div id="settlement-pdf-info" class="hidden">
+                    <div class="flex items-center justify-center gap-2 text-green-600">
+                      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                      </svg>
+                      <span id="settlement-pdf-filename" class="font-medium"></span>
+                    </div>
+                    <button type="button" onclick="event.stopPropagation(); removeSettlementPdf();" class="mt-2 text-sm text-red-500 hover:text-red-700">削除</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 保存ボタン -->
+              <div class="pt-4 border-t">
+                <button onclick="saveSettlementDetails()" class="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                  </svg>
+                  和解情報を保存
+                </button>
               </div>
             </div>
           </div>
@@ -3658,6 +3817,185 @@
 
       closeNewPersonModal();
     }
+
+    // ========================================
+    // 和解管理機能
+    // ========================================
+
+    let settlementPdfFile = null;
+
+    // 和解ステータス選択
+    function selectSettlementStatus(status) {
+      document.querySelectorAll('[id^="status-"]').forEach(radio => {
+        radio.checked = false;
+        radio.closest('div[class*="flex items-center"]').classList.remove('bg-yellow-50', 'bg-green-50', 'bg-gray-100');
+        radio.closest('div[class*="flex items-center"]').classList.remove('border-yellow-300', 'border-green-300', 'border-gray-400');
+        radio.closest('div[class*="flex items-center"]').classList.add('bg-gray-50', 'border-gray-200');
+      });
+
+      const radio = document.getElementById('status-' + status);
+      radio.checked = true;
+      const container = radio.closest('div[class*="flex items-center"]');
+      container.classList.remove('bg-gray-50', 'border-gray-200');
+
+      if (status === 'negotiating') {
+        container.classList.add('bg-yellow-50', 'border-yellow-300');
+      } else if (status === 'settled') {
+        container.classList.add('bg-green-50', 'border-green-300');
+      } else if (status === 'ended') {
+        container.classList.add('bg-gray-100', 'border-gray-400');
+      }
+
+      // 和解成立以外では詳細セクションを薄くする
+      const detailsSection = document.getElementById('settlement-details-section');
+      if (status === 'settled') {
+        detailsSection.classList.remove('opacity-50', 'pointer-events-none');
+      } else {
+        detailsSection.classList.add('opacity-50', 'pointer-events-none');
+      }
+    }
+
+    // 和解書PDFアップロード
+    function handleSettlementPdfUpload(event) {
+      const file = event.target.files[0];
+      if (file) {
+        if (file.type !== 'application/pdf') {
+          alert('PDFファイルを選択してください');
+          return;
+        }
+        settlementPdfFile = file;
+        document.getElementById('settlement-pdf-placeholder').classList.add('hidden');
+        document.getElementById('settlement-pdf-info').classList.remove('hidden');
+        document.getElementById('settlement-pdf-filename').textContent = file.name;
+
+        // ドロップゾーンのスタイル更新
+        const dropzone = document.getElementById('settlement-pdf-dropzone');
+        dropzone.classList.remove('border-gray-300');
+        dropzone.classList.add('border-green-400', 'bg-green-50');
+      }
+    }
+
+    // 和解書PDF削除
+    function removeSettlementPdf() {
+      settlementPdfFile = null;
+      document.getElementById('settlement-pdf-input').value = '';
+      document.getElementById('settlement-pdf-placeholder').classList.remove('hidden');
+      document.getElementById('settlement-pdf-info').classList.add('hidden');
+      document.getElementById('settlement-pdf-filename').textContent = '';
+
+      // ドロップゾーンのスタイル復元
+      const dropzone = document.getElementById('settlement-pdf-dropzone');
+      dropzone.classList.add('border-gray-300');
+      dropzone.classList.remove('border-green-400', 'bg-green-50');
+    }
+
+    // 和解情報保存
+    function saveSettlementDetails() {
+      const status = document.querySelector('input[name="settlement"]:checked');
+      if (!status) {
+        alert('和解ステータスを選択してください');
+        return;
+      }
+
+      const statusId = status.id;
+      const isSettled = statusId === 'status-settled';
+
+      // 和解成立の場合は必須チェック
+      if (isSettled) {
+        const settlementDate = document.getElementById('settlement-date').value;
+        const totalAmount = document.getElementById('settlement-total-amount').value;
+        const monthlyAmount = document.getElementById('settlement-monthly-amount').value;
+        const installmentCount = document.getElementById('settlement-installment-count').value;
+        const firstPaymentDate = document.getElementById('settlement-first-payment-date').value;
+        const warranty = document.querySelector('input[name="representation-warranty"]:checked');
+
+        if (!settlementDate) {
+          alert('和解日を入力してください');
+          document.getElementById('settlement-date').focus();
+          return;
+        }
+        if (!totalAmount) {
+          alert('和解金額総額を入力してください');
+          document.getElementById('settlement-total-amount').focus();
+          return;
+        }
+        if (!firstPaymentDate) {
+          alert('初回支払日を入力してください');
+          document.getElementById('settlement-first-payment-date').focus();
+          return;
+        }
+        if (!settlementPdfFile) {
+          alert('和解書PDFを添付してください');
+          return;
+        }
+
+        // 保存処理（デモ）
+        const statusText = '和解成立';
+        const warrantyText = warranty ? (warranty.value === 'yes' ? 'あり' : 'なし') : '未設定';
+
+        const confirmMsg = `以下の内容で和解情報を保存します：
+
+【和解ステータス】${statusText}
+【和解日】${settlementDate}
+【和解金額総額】${Number(totalAmount).toLocaleString()}円
+【月次の支払額】${monthlyAmount ? Number(monthlyAmount).toLocaleString() + '円' : '一括払い'}
+【回数】${installmentCount || 1}回
+【初回支払日】${firstPaymentDate}
+【表明保証】${warrantyText}
+【和解書PDF】${settlementPdfFile.name}
+
+保存してWDBに連携しますか？`;
+
+        if (confirm(confirmMsg)) {
+          alert('✅ 和解情報を保存しました\n\nWDBに連携されました。入金管理画面で確認できます。');
+        }
+      } else {
+        // 交渉中または終了の場合
+        const statusLabels = {
+          'status-negotiating': '交渉中',
+          'status-ended': '終了'
+        };
+        const statusLabel = statusLabels[statusId] || 'ステータス更新';
+
+        if (confirm(`和解ステータスを「${statusLabel}」に更新しますか？`)) {
+          alert(`✅ 和解ステータスを「${statusLabel}」に更新しました`);
+        }
+      }
+    }
+
+    // ドラッグ＆ドロップ対応
+    document.addEventListener('DOMContentLoaded', function() {
+      const dropzone = document.getElementById('settlement-pdf-dropzone');
+      if (dropzone) {
+        dropzone.addEventListener('dragover', function(e) {
+          e.preventDefault();
+          dropzone.classList.add('border-green-400', 'bg-green-50');
+        });
+
+        dropzone.addEventListener('dragleave', function(e) {
+          e.preventDefault();
+          if (!settlementPdfFile) {
+            dropzone.classList.remove('border-green-400', 'bg-green-50');
+          }
+        });
+
+        dropzone.addEventListener('drop', function(e) {
+          e.preventDefault();
+          const file = e.dataTransfer.files[0];
+          if (file) {
+            if (file.type !== 'application/pdf') {
+              alert('PDFファイルを選択してください');
+              dropzone.classList.remove('border-green-400', 'bg-green-50');
+              return;
+            }
+            settlementPdfFile = file;
+            document.getElementById('settlement-pdf-placeholder').classList.add('hidden');
+            document.getElementById('settlement-pdf-info').classList.remove('hidden');
+            document.getElementById('settlement-pdf-filename').textContent = file.name;
+          }
+        });
+      }
+    });
   </script>
 
 </body>
